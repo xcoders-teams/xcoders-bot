@@ -1,0 +1,109 @@
+import fs from 'fs';
+import _ from 'lodash';
+import moment from 'moment-timezone';
+
+import loadedCommands from '../loadedCommands.js';
+import hitCommands from '../library/hitCommand.js';
+
+const style = '᚛';
+const list = ['/', '&', '-', '|'];
+const randomSplit = _.sample(list);
+const monospace = (str) => '```' + str + '```';
+const interline = (str) => '_' + str + '_';
+
+const allmenu = (m, prefix, name, rest, functions) => {
+  const listFeatures = functions.requireJson('./database/commands.json');
+  const { size } = fs.lstatSync('./session');
+  if (Object.keys(listFeatures).length < 1) {
+    return loadedCommands(functions);
+  }
+  let position = '';
+  let assignFeatures = _.assign(listFeatures);
+  Object.keys(listFeatures).forEach((a) => {
+    position += `\t\t\t</ *${a.replace(/[^a-zA-Z0-9]/g, ' ')}* >\n${interline(style + ' ' + prefix + assignFeatures[a].join('_\n_' + style + ' ' + prefix))}\n\n`;
+  });
+  return `
+▪ ${monospace(`Hallo ${name} ⌈ @${m.sender.split('@')[0]} ⌋`)} 👋
+▪ *Date*: ${monospace(moment().tz('Asia/Jakarta').locale('id').format('LLL'))}
+▪ *Api*: ${monospace(rest)}
+▪ *Session*: ${monospace(functions.formatSize(size))}
+
+${position}
+${hitCommands.popularCommand(1) ? `▪ *3 Most Popular Features*\n${hitCommands.popularCommand(3).slice(0, -2)}` : ''}`;
+};
+
+const mostPopular = (obj) => {
+  const sortedCommands = Object.keys(obj).sort((a, b) => {
+    if (obj[b].count === obj[a].count) {
+      return obj[b].done - obj[a].done;
+    }
+    return obj[b].count - obj[a].count;
+  });
+  return sortedCommands.map(command => {
+    const { count, done, fail } = obj[command];
+    return `♨️ ${monospace(command)}\n\t⊳ ${monospace('Done:')} *${done} Count*\n\t⊳ ${monospace('Fail:')} *${fail} Count*\n\t⊳ ${monospace('Total:')} *${count} Hit*\n\n`;
+  }).join('');
+}
+
+const countFeatures = (requireJson) => {
+  const listFeatures = requireJson('./database/commands.json');
+  let position = '';
+  const assignFeatures = _.assign(listFeatures);
+
+  Object.keys(listFeatures).forEach((a) => {
+    position += `${a}\n${assignFeatures[a].length} Fitur\n\n`;
+  });
+
+  return position;
+};
+
+const stats = (os, speed, performance, runtime, formatSize) => {
+  const used = process.memoryUsage();
+  const cpus = os.cpus().map(cpu => {
+    cpu.total = Object.keys(cpu.times).reduce((last, type) => last + cpu.times[type], 0);
+    return cpu;
+  });
+  const cpu = cpus.reduce((last, cpu, _, { length }) => {
+    last.total += cpu.total;
+    last.speed += cpu.speed / length;
+    last.times.user += cpu.times.user;
+    last.times.nice += cpu.times.nice;
+    last.times.sys += cpu.times.sys;
+    last.times.idle += cpu.times.idle;
+    last.times.irq += cpu.times.irq;
+    return last;
+  }, { speed: 0, total: 0, times: { user: 0, nice: 0, sys: 0, idle: 0, irq: 0 } });
+  let timestamp = speed();
+  let latensi = speed() - timestamp;
+  let perf_now = speed();
+  let perf_old = performance();
+
+  return `
+Kecepatan Respon ${latensi.toFixed(4)} _Second_ \n ${perf_old - perf_now} _miliseconds_
+
+⊳ Runtime : ${runtime(process.uptime())}
+
+💻 Info Server
+⊳ RAM: ${formatSize(os.totalmem() - os.freemem())} / ${formatSize(os.totalmem())}
+⊳ OS Type: ${os.type()}
+⊳ OS Version: ${os.version()}
+⊳ Hostname: ${os.hostname()}
+
+🔰 NodeJS Memory Usage
+${Object.keys(used).map((key, _, arr) => `⊳ ${key.padEnd(Math.max(...arr.map(v => v.length)), ' ')}: ${formatSize(used[key])}`).join('\n')}
+${cpus[0] ? `
+🌐 Total CPU Usage 
+${cpus[0].model.trim()} (${cpu.speed} MHZ)
+${Object.keys(cpu.times).map(type => `⊳ ${(type).padEnd(6)}: ${(100 * cpu.times[type] / cpu.total).toFixed(2)}%`).join('\n')}
+
+♨️ CPU Core(s) Usage (${cpus.length} Core CPU)
+${cpus.map((cpu, i) => `${i + 1}. ${cpu.model.trim()} (${cpu.speed} MHZ)\n${Object.keys(cpu.times).map(type => `⊳ ${(type).padEnd(6)}: ${(100 * cpu.times[type] / cpu.total).toFixed(2)}%`).join('\n')}`).join('\n\n')}` : ''}
+`.trim();
+};
+
+export default {
+  stats,
+  countFeatures,
+  mostPopular,
+  allmenu
+};
