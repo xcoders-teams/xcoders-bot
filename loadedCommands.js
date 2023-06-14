@@ -6,15 +6,21 @@ async function loadCommands(functions) {
   const commandsPath = './commands';
   const plugins = fs.readdirSync(commandsPath);
   for (const plugin of plugins) {
-    if (!/\.js/g.test(plugin)) {
+    if (!/\.js$/g.test(plugin)) {
       const commandFiles = fs.readdirSync(path.join(commandsPath, plugin)).filter(file => file.endsWith('.js'));
       for (const filename of commandFiles) {
         const pathFiles = path.join(commandsPath, plugin, filename);
         try {
-          const command = (await import('./' + pathFiles)).default;
+          const command = (await import(`./${pathFiles}`)).default;
+          const allCommand = functions.requireJson('./database/allCommands.json');
           if (command) {
-            global.headersCommands.push({ 'category': plugin, 'command': command.views });
-            global.allCommands.push(...command.views);
+            global.headersCommands.push({ category: plugin, command: command.views });
+            if (allCommand.length < 1) {
+              global.allCommands.push(...command.views);
+            } else {
+              global.allCommands.push(...allCommand, ...command.views);
+            }
+            global.allCommands = [...new Set(global.allCommands)];
             global.plugins[`${plugin}-${filename}`] = command;
           }
         } catch (error) {
@@ -25,6 +31,7 @@ async function loadCommands(functions) {
     }
   }
 }
+
 
 function updateCommandsFile() {
   const headers = global.headersCommands;

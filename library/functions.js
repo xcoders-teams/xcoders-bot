@@ -1,6 +1,7 @@
 import fs from 'fs';
 import jimp from 'jimp';
 import path from 'path';
+import util from 'util';
 import http from 'https';
 import https from 'https';
 import pdfkit from 'pdfkit';
@@ -9,15 +10,19 @@ import fetch from 'node-fetch';
 import Module from 'module';
 import _ from 'lodash';
 import url from 'url';
+import { exec as childExec } from 'child_process';
+import ffmpeg from 'fluent-ffmpeg';
 import Baileys from '@whiskeysockets/baileys';
 import { fileTypeFromBuffer } from 'file-type';
 
 import ParseResult from './parseResult.js';
 
+const exec = util.promisify(childExec);
 const database = global.database = new Array();
 const library = new Object();
 
-function lastKeysObject(input) {
+// library export
+function xcodersLastKeysObject(input) {
   if (typeof input === 'string') {
     return input;
   }
@@ -37,21 +42,21 @@ function lastKeysObject(input) {
 }
 
 
-function parseResult(input) {
+function xcodersParseResult(input) {
   const parseInput = new ParseResult();
   return parseInput.parse(input);
 }
 
-function requireJson(pathFiles) {
+function xcodersRequireJson(pathFiles) {
   if (!fs.existsSync(pathFiles)) throw new Error('files not exists.');
   const readFiles = fs.readFileSync(pathFiles);
   const parseFiles = JSON.parse(readFiles);
   return parseFiles;
 }
 
-function convertToPDF(images = [], size = 'A4') {
+function xcodersConvertToPDF(images = [], size = 'A4') {
   return new Promise(async (resolve, reject) => {
-    const sizes = requireJson('./database/pdfSizes.json');
+    const sizes = xcodersRequireJson('./database/pdfSizes.json');
     if (!Array.isArray(images)) return reject('images must be an array');
     const getSize = sizes[size];
     if (!getSize) return reject('Size is invalid!');
@@ -73,7 +78,7 @@ function convertToPDF(images = [], size = 'A4') {
   });
 }
 
-async function isImageUrl(url) {
+async function xcodersIsImageUrl(url) {
   try {
     const protocol = url.startsWith('https') ? https : http;
     const requestOptions = {
@@ -98,7 +103,7 @@ async function isImageUrl(url) {
   }
 }
 
-async function isAudioUrl(url) {
+async function xcodersIsAudioUrl(url) {
   try {
     const protocol = url.startsWith('https') ? https : http;
     const requestOptions = {
@@ -123,7 +128,7 @@ async function isAudioUrl(url) {
   }
 }
 
-async function isVideoUrl(url) {
+async function xcodersIsVideoUrl(url) {
   try {
     const protocol = url.startsWith('https') ? https : http;
     const requestOptions = {
@@ -148,7 +153,7 @@ async function isVideoUrl(url) {
   }
 }
 
-function getBuffer(url, options = {}) {
+function xcodersGetBuffer(url, options = {}) {
   return new Promise((resolve, reject) => {
     const protocol = url.startsWith('https') ? https : http;
     const requestOptions = {
@@ -189,7 +194,7 @@ function getBuffer(url, options = {}) {
   });
 }
 
-async function getJson(url, options = {}) {
+async function xcodersGetJson(url, options = {}) {
   try {
     const protocol = url.startsWith('https') ? https : http;
     const requestOptions = {
@@ -222,33 +227,34 @@ async function getJson(url, options = {}) {
 }
 
 
-function upTimer (ms) {
-  const h = Math.floor(ms / 3600000)
-  const m = (Math.floor(ms / 60000) % 60);
-  const s = (Math.floor(ms / 1000) % 60);
-  return [h, m, s].map(v => v.toString().padStart(2, 0)).join(':');
-}
-
-function formatDuration(seconds) {
+function xcodersFormatDuration(seconds) {
   seconds = Number(seconds);
   const days = Math.floor(seconds / (3600 * 24));
-  const hours = Math.floor(seconds % (3600 * 24) / 3600);
-  const minutes = Math.floor(seconds % 3600 / 60);
-  const remainingSeconds = (seconds % 60);
-  let result = '';
-  if (days > 0) result += days + (days == 1 ? ' day, ' : ' days, ');
-  if (hours > 0) result += hours + (hours == 1 ? ' hour, ' : ' hours, ');
-  if (minutes > 0) result += minutes + (minutes == 1 ? ' minute, ' : ' minutes, ');
-  if (remainingSeconds > 0) result += remainingSeconds + (remainingSeconds == 1 ? ' second' : ' seconds');
-  if (result === '') result = '0 seconds';
-  return result;
+  const hours = Math.floor((seconds % (3600 * 24)) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const remainingSeconds = Math.floor(seconds % 60);
+  const durationParts = [];
+  if (days > 0) {
+    durationParts.push(days + (days === 1 ? ' day' : ' days'));
+  }
+  if (hours > 0) {
+    durationParts.push(hours + (hours === 1 ? ' hour' : ' hours'));
+  }
+  if (minutes > 0) {
+    durationParts.push(minutes + (minutes === 1 ? ' minute' : ' minutes'));
+  }
+  if (remainingSeconds > 0) {
+    durationParts.push(remainingSeconds + (remainingSeconds === 1 ? ' second' : ' seconds'));
+  }
+  return durationParts.length === 0 ? '0 seconds' : durationParts.length === 1 ? durationParts[0] : durationParts.length === 2 ? durationParts.join(' and ') : durationParts.join(', ') + ', and ' + durationParts.pop();
 }
 
-function getRandom (ext) {
+
+function xcodersGetRandom(ext) {
   return `${Math.floor(Math.random() * 10000000) + 1}${ext}`;
 }
 
-async function downloadContentMediaMessage(message, options = {}) {
+async function xcodersDownloadContentMediaMessage(message, options = {}) {
   const mime = (message.coders || message).mimetype || '';
   const messageType = mime.startsWith('application') ? mime.replace('application', 'document') : mime.split('/')[0];
   const stream = await Baileys.downloadContentFromMessage(message, messageType);
@@ -258,7 +264,7 @@ async function downloadContentMediaMessage(message, options = {}) {
   return image.getBufferAsync(jimp.MIME_PNG);
 }
 
-function createShortData (url, ...args) {
+function xcodersCreateShortData(url, ...args) {
   const id = crypto.randomBytes(32).toString('base64').replace(/\W\D/gi, '').slice(0, 5);
   const data = { id, url };
   Object.assign(data, ...args);
@@ -267,7 +273,7 @@ function createShortData (url, ...args) {
   return data;
 }
 
-function formatSize(bytes, si = true, dp = 1) {
+function xcodersFormatSize(bytes, si = true, dp = 1) {
   const thresh = si ? 1000 : 1024;
   if (Math.abs(bytes) < thresh) return bytes + ' B';
   const units = si ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'] : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
@@ -279,29 +285,136 @@ function formatSize(bytes, si = true, dp = 1) {
   return bytes.toFixed(dp) + ' ' + units[u];
 }
 
-function reloadModule(modulePath) {
+function xcodersReloadModule(modulePath) {
   const require = Module.createRequire(import.meta.url);
   const fullPath = path.resolve(modulePath);
   delete require.cache[fullPath];
 }
 
+async function xcodersCreateStickerImage(media, options = {}, nameExif = './temp/data.exif') {
+  const tmpFileOut = path.join(process.cwd(), 'temp', xcodersGetRandom('.webp'));
+  const tmpFileIn = path.join(process.cwd(), 'temp', xcodersGetRandom('.jpg'));
+  try {
+    await fs.promises.writeFile(tmpFileIn, media);
+    if (options.packname || options.authorname) {
+      nameExif = './temp/' + xcodersGetRandom('.exif');
+      await exif(options.packname, options.authorname, nameExif);
+    }
+    if (!fs.existsSync(nameExif)) await exif(global.packname, global.authorname, nameExif);
+    await new Promise((resolve, reject) => {
+      ffmpeg(tmpFileIn)
+        .on('error', reject)
+        .on('end', async () => {
+          try {
+            await exec(`webpmux -set exif ${nameExif} ${tmpFileOut} -o ${tmpFileOut}`);
+            await fs.promises.unlink(nameExif);
+            resolve(true);
+          } catch (error) {
+            await fs.promises.unlink(nameExif);
+            reject(error);
+          }
+        })
+        .addOutputOptions(["-vcodec", "libwebp", "-vf", "scale='min(320,iw)':min'(320,ih)':force_original_aspect_ratio=decrease,fps=15, pad=320:320:-1:-1:color=white@0.0, split [a][b]; [a] palettegen=reserve_transparent=on:transparency_color=ffffff [p]; [b][p] paletteuse"])
+        .toFormat('webp')
+        .save(tmpFileOut);
+    });
+    const buffer = await fs.promises.readFile(tmpFileOut);
+    fs.unlinkSync(tmpFileOut);
+    fs.unlinkSync(tmpFileIn);
+    return buffer;
+  } catch (error) {
+    if (fs.existsSync(tmpFileIn)) await fs.promises.unlink(tmpFileIn);
+    throw error;
+  }
+}
 
-library.reloadModule = reloadModule;
-library.formatSize = formatSize;
-library.upTimer = upTimer;
-library.createShortData = createShortData;
-library.downloadContentMediaMessage = downloadContentMediaMessage;
-library.getRandom = getRandom;
-library.formatDuration = formatDuration;
-library.getJson = getJson;
-library.getBuffer = getBuffer;
-library.isImageUrl = isImageUrl;
-library.isAudioUrl = isAudioUrl;
-library.isVideoUrl = isVideoUrl;
-library.requireJson = requireJson;
-library.convertToPDF = convertToPDF;
-library.parseResult = parseResult;
-library.getMessage = lastKeysObject;
+async function xcodersCreateStickerVIdeo(media, options = {}, nameExif = './temp/data.exif') {
+  const tmpFileOut = path.join(process.cwd(), 'temp', xcodersGetRandom('.webp'));
+  const tmpFileIn = path.join(process.cwd(), 'temp', xcodersGetRandom('.mp4'));
+  try {
+    await fs.promises.writeFile(tmpFileIn, media);
+    if (options.packname || options.authorname) {
+      nameExif = './temp/' + xcodersGetRandom('.exif');
+      await exif(options.packname, options.authorname, nameExif);
+    }
+    if (!fs.existsSync(nameExif)) await exif(global.packname, global.authorname, nameExif);
+    await new Promise((resolve, reject) => {
+      ffmpeg(tmpFileIn)
+        .on('error', reject)
+        .on('end', async () => {
+          try {
+            await exec(`webpmux -set exif ${nameExif} ${tmpFileOut} -o ${tmpFileOut}`);
+            resolve(true);
+          } catch (error) {
+            reject(error);
+          }
+        })
+        .addOutputOptions(['-vcodec', 'libwebp', '-vf', "scale='min(320,iw)':min'(320,ih)':force_original_aspect_ratio=decrease,fps=15, pad=320:320:-1:-1:color=white@0.0, split [a][b]; [a] palettegen=reserve_transparent=on:transparency_color=ffffff [p]; [b][p] paletteuse", '-loop', '0', '-ss', '00:00:00', '-t', '00:00:05', '-preset', 'default', '-an', '-vsync', '0'])
+        .toFormat('webp')
+        .save(tmpFileOut);
+    });
+    const buffer = await fs.promises.readFile(tmpFileOut);
+    fs.unlinkSync(tmpFileOut);
+    fs.unlinkSync(tmpFileIn);
+    return buffer;
+  } catch (error) {
+    if (fs.existsSync(tmpFileIn)) await fs.promises.unlink(tmpFileIn);
+    throw error;
+  }
+}
+
+function reactEmoji() {
+  const emojiList = {
+    'love': ['❤', '😍', '😘', '💕', '😻', '💑', '👩‍❤‍👩', '👨‍❤‍👨', '💏', '👩‍❤‍💋‍👩', '👨‍❤‍💋‍👨', '🧡', '💛', '💚', '💙', '💜', '🖤', '💔', '❣', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '♥', '💌', '💋', '👩‍❤️‍💋‍👩', '👨‍❤️‍💋‍👨', '👩‍❤️‍👨', '👩‍❤️‍👩', '👨‍❤️‍👨', '👩‍❤️‍💋‍👨', '👬', '👭', '👫', '🥰', '😚', '😙', '👄', '🌹', '😽', '❣️', '❤️'],
+    'happy': ['😀', ' 😃', ' 😄', ' 😁', ' 😆', ' 😅', ' 😂', ' 🤣', ' 🙂', ' 😛', ' 😝', ' 😜', ' 🤪', ' 🤗', ' 😺', ' 😸', ' 😹', ' ☺', ' 😌', ' 😉', ' 🤗', ' 😊'],
+    'sad': ['☹', ' 😣', ' 😖', ' 😫', ' 😩', ' 😢', ' 😭', ' 😞', ' 😔', ' 😟', ' 😕', ' 😤', ' 😠', ' 😥', ' 😰', ' 😨', ' 😿', ' 😾', ' 😓', ' 🙍‍♂', ' 🙍‍♀', ' 💔', ' 🙁', ' 🥺', ' 🤕', ' ☔️', ' ⛈', ' 🌩', ' 🌧'],
+    'angry': ['😯', ' 😦', ' 😧', ' 😮', ' 😲', ' 🙀', ' 😱', ' 🤯', ' 😳', ' ❗', ' ❕', ' 🤬', ' 😡', ' 😠', ' 🙄', ' 👿', ' 😾', ' 😤', ' 💢', ' 👺', ' 🗯️', ' 😒', ' 🥵'],
+    'greet': ['👋'],
+    'celebrate': ['🎊', ' 🎉', ' 🎁', ' 🎈', ' 👯‍♂️', ' 👯', ' 👯‍♀️', ' 💃', ' 🕺', ' 🔥', ' ⭐️', ' ✨', ' 💫', ' 🎇', ' 🎆', ' 🍻', ' 🥂', ' 🍾', ' 🎂', ' 🍰']
+  };
+  const objectEmoji = Object.keys(emojiList);
+  const randomEmoji = _.sample(objectEmoji);
+  return emojiList[randomEmoji];
+}
+
+async function exif(packname, authorname, pathname) {
+  if (fs.existsSync(pathname)) return true;
+  const pack = {
+    'sticker-pack-id': 'com.snowcorp.stickerly.android.stickercontentprovider b5e7275f-f1de-4137-961f-57becfad34f2',
+    'sticker-pack-name': packname,
+    'sticker-pack-publisher': authorname,
+    'emojis': reactEmoji(),
+    'android-app-store-link': 'https://play.google.com/store/apps/details?id=com.stickify.stickermaker',
+    'ios-app-store-link': 'https://itunes.apple.com/app/sticker-maker-studio/id1443326857'
+  };
+  const exifAttr = Buffer.from([0x49, 0x49, 0x2A, 0x00, 0x08, 0x00, 0x00, 0x00, 0x01, 0x00, 0x41, 0x57, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x16, 0x00, 0x00, 0x00]);
+  const jsonBuffer = Buffer.from(JSON.stringify(pack), 'utf-8');
+  const exif = Buffer.concat([exifAttr, jsonBuffer]);
+  exif.writeUIntLE(jsonBuffer.length, 14, 4);
+  await fs.writeFile(pathname, exif, (error) => {
+    if (error) throw error;
+    console.log('Success!');
+  });
+  return true;
+}
+
+library.stickerVideo = xcodersCreateStickerVIdeo;
+library.stickerImage = xcodersCreateStickerImage;
+library.reloadModule = xcodersReloadModule;
+library.formatSize = xcodersFormatSize;
+library.formatDuration = xcodersFormatDuration;
+library.createShortData = xcodersCreateShortData;
+library.downloadContentMediaMessage = xcodersDownloadContentMediaMessage;
+library.getRandom = xcodersGetRandom;
+library.getJson = xcodersGetJson;
+library.getBuffer = xcodersGetBuffer;
+library.isImageUrl = xcodersIsImageUrl;
+library.isAudioUrl = xcodersIsAudioUrl;
+library.isVideoUrl = xcodersIsVideoUrl;
+library.requireJson = xcodersRequireJson;
+library.convertToPDF = xcodersConvertToPDF;
+library.parseResult = xcodersParseResult;
+library.getMessage = xcodersLastKeysObject;
 
 export default library;
 

@@ -1,32 +1,16 @@
 'use strict';
 
-import axios from 'axios';
-import formData from 'form-data';
-
 export default {
   views: ['sticker'], // view for message in  menu
   command: /^(s|sti(c|)ker)$/i, //another command.
-  description: 'Create Sticker from quoted messsge or url',
+  description: 'Create Sticker from quoted messsge',
   usage: '%cmd% quoted or url',
   media: true,
-  execute: async ({ xcoders, m, x, apikeys, query, quoted, mimetype, regex, replyMessage, errorMessage, host }, {}, { addHitCommand }) => {
+  execute: async ({ xcoders, m, x, query, quoted, mimetype, errorMessage }, { stickerVideo, stickerImage }, { addHitCommand }) => {
     try {
-      const FormData = new formData();
-      const getQuery = query.split('|');
+      const [pack, author] = query.split('|');
       const buffer = await quoted.download();
-      FormData.append('input', Buffer.from(buffer), {
-        filename: 'xcoders.png',
-        contentType: 'image/png'
-      });
-      FormData.append('packname', getQuery[0] || packname);
-      FormData.append('author', getQuery[1] || authorname);
-      const { data } = await axios.post(`${host}/api/convert/sticker?apikey=${apikeys}`, FormData, {
-        maxContentLength: Infinity,
-        headers: {
-        ...FormData.getHeaders() 
-        }
-      });
-      const result = Buffer.from(data.result);
+      const result = /image/.test(mimetype) ? await stickerImage(buffer, { packname: pack, authorname: author }) : /video/.test(mimetype) ? await stickerVideo(buffer) : null;
       addHitCommand('Sticker', true);
       return xcoders.sendMessage(m.chat, { sticker: result }, { quoted: x });
     } catch (error) {

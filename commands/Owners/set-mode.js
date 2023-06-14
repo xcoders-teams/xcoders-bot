@@ -16,19 +16,19 @@ export default {
         return replyMessage(result);
       } else if (/api|host/.test(query)) {
         global.original = !global.original;
-        await replyMessage(response.success);
+        return replyMessage(response.success);
       } else if (/apikey/.test(query)) {
         global.apikeys = query.slice(7);
-        await replyMessage(response.success);
+        return replyMessage(response.success);
       } else if (/public|self/.test(query)) {
         global.public = query == 'self' ? false : true;
-        await replyMessage(response.success);
+        return replyMessage(response.success);
       } else if(/prefix/.test(query)) {
         const input = query.slice(7);
         global.multiprefix = input == 'multi' ? true : false;
         global.nonprefix = input == 'nopref' ? true : false;
         global.prefix = !/multi|nopref/.test(input) ? input : '!';
-        await replyMessage(response.success);
+        return replyMessage(response.success);
       } else {
         return replyMessage('harap periksa query anda');
       }

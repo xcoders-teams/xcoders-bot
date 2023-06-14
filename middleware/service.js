@@ -57,7 +57,7 @@ const countFeatures = (requireJson) => {
   return position;
 };
 
-const stats = (os, speed, performance, runtime, formatSize) => {
+const stats = (os, speed, performance, formatDuration, formatSize) => {
   const used = process.memoryUsage();
   const cpus = os.cpus().map(cpu => {
     cpu.total = Object.keys(cpu.times).reduce((last, type) => last + cpu.times[type], 0);
@@ -81,7 +81,7 @@ const stats = (os, speed, performance, runtime, formatSize) => {
   return `
 Kecepatan Respon ${latensi.toFixed(4)} _Second_ \n ${perf_old - perf_now} _miliseconds_
 
-⊳ Runtime : ${runtime(process.uptime())}
+⊳ Runtime : ${formatDuration(process.uptime())}
 
 💻 Info Server
 ⊳ RAM: ${formatSize(os.totalmem() - os.freemem())} / ${formatSize(os.totalmem())}

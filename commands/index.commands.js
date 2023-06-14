@@ -105,11 +105,12 @@ export default async (xcoders, x, m, functions) => {
       }
     }
     if (body.startsWith('tes') && isCreators && !m.isBaileys) {
-      return replyMessage('```Online ' + functions.upTimer(process.uptime() * 1000) + '```');
+      return replyMessage('```Online ' + functions.formatDuration(process.uptime()) + '```');
     }
 
     // save database every 1 minutes
     setInterval(function () {
+      fs.writeFileSync('./database/allCommands.json', JSON.stringify(global.allCommands, null, 2));
       fs.writeFileSync('./database/hit.json', JSON.stringify(global.hitCommand, null, 2));
     }, 600000);
 
@@ -140,15 +141,25 @@ export default async (xcoders, x, m, functions) => {
             if (!(await functions.isAudioUrl(query))) return replyMessage('Query yang dibutuhkan adalah URL audio yang valid.');
           }
         }
+        if (!allCommands.includes(command)) allCommands.push(command);
         const tools = { command, xcoders, m, x, prefix, owners, senderName, thumbnail, waitingMessage, query, replyMessage, styleMessage, invalidUrlMessage, errorMessage, response, isCreators, isBotAdminsGroups, isAdminsGroups, getParticipants, metadataGroups, apikeys, mimetype, quoted, regex, delay, host };
         return Functions.execute(tools, functions, hitCommands);
       }
     }
-    const str = allCommands.map(str => {
-      if (similarity(command, str) >= 0.5) return `Mungkin yang anda maksud: *${prefix + str}* ?`;
+
+    const checkCommand = allCommands.map((str) => {
+      let string = '';
+      if (similarity(command, str) >= 0.5) {
+        string = `=> *${prefix + str}*\n`;
+      }
+      if (!string) return;
+      return string;
     }).join('');
-    if (!str) return replyMessage('*_perintah tidak ada yang cocok, coba periksa kembali command anda!_*');
-    return replyMessage(str);
+    if (!checkCommand) {
+      return replyMessage('*_perintah tidak ada yang cocok, coba periksa kembali command anda!_*');
+    } else {
+      return replyMessage('```Mungkin command yang anda maksud adalah:\n\n```' + checkCommand);
+    }
   } catch (error) {
     console.error(chalk.redBright(`[ ERROR ] ${moment().format('HH:mm:ss')}`), error);
   }

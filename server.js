@@ -6,13 +6,12 @@ import qrcode from 'qrcode';
 import util from 'util';
 
 import html from './middleware/html.js';
-import logger from './middleware/console.js';
 
 const apps = express();
 
 apps.set('json spaces', 2);
 
-apps.get('*', async (req, res) => {
+apps.get('*', async (_, res) => {
   try {
     if (global.qrcode) {
       const { version, isLatest } = await fetchLatestBaileysVersion();
