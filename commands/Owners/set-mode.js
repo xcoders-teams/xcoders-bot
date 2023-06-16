@@ -1,7 +1,5 @@
 'use strict';
 
-import fs from 'fs';
-
 export default {
   views: ['change'], // views for menu message
   command: /^change/i, // another command
