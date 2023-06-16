@@ -1,5 +1,5 @@
 # *xcoders api*
-## _The Last Markdown Editor, Ever_
+## _Example case for rest api (api-xcoders.site)_
 
 
 xcoders bot is a bot built using nodejs and uses the baileys library please star if you like and please fork if you want to develop. and to install please follow the steps below:
