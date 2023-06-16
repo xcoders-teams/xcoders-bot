@@ -41,7 +41,6 @@ function xcodersLastKeysObject(input) {
   return lastValue;
 }
 
-
 function xcodersParseResult(input) {
   const parseInput = new ParseResult();
   return parseInput.parse(input);
@@ -167,9 +166,8 @@ function xcodersGetBuffer(url, options = {}) {
     };
     const req = protocol.request(url, requestOptions, (res) => {
       if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        // Handle redirect if the response status code is a redirect
         const redirectUrl = new URL(res.headers.location, url);
-        getBuffer(redirectUrl.href, options).then(resolve).catch(reject);
+        xcodersGetBuffer(redirectUrl.href, options).then(resolve).catch(reject);
       } else {
         const chunks = [];
         res.on('data', (chunk) => chunks.push(chunk));

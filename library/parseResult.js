@@ -80,7 +80,7 @@ class parseResult {
             return `• ${capitalize(key)}:\n${nestedEntries.join('\n')}`;
           }
         }
-        return `• ${capitalize(key)}: ${typeof value === 'string' ? value : typeof value === 'number' ? value.toString() : typeof value === 'boolean' ? value.toString() : value instanceof Object ?  Object.keys({ ...value }).join(', ') : '-'}`;
+        return `• ${capitalize(key)}: ${typeof value === 'string' ? value : typeof value === 'number' ? value.toString() : typeof value === 'boolean' ? value.toString() : value instanceof Object ? Object.keys({ ...value }).join(', ') : '-'}`;
       }).filter(entry => entry !== false);
       if (entries.length > 0) {
         result += entries.join('\n') + '\n\n';
@@ -88,7 +88,7 @@ class parseResult {
     }
     return result;
   }
-  
+
   literation(input) {
     let lines = input.split('\n');
     let outputString = '';

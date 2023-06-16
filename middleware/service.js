@@ -50,8 +50,8 @@ const countFeatures = (requireJson) => {
   let position = '';
   const assignFeatures = _.assign(listFeatures);
 
-  Object.keys(listFeatures).forEach((a) => {
-    position += `${a}\n${assignFeatures[a].length} Fitur\n\n`;
+  Object.keys(listFeatures).forEach((str) => {
+    position += `${str}\n${assignFeatures[a].length} Fitur\n\n`;
   });
 
   return position;
