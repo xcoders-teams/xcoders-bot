@@ -1,7 +1,5 @@
 'use strict';
 
-import path from 'path';
-
 import helpers from '../../middleware/service.js';
 
 export default {
@@ -10,7 +8,7 @@ export default {
   description: 'Utility for display Most Popular Features',
   query: false,
   usage: '',
-  execute: ({ replyMessage }, { formatDuration, formatSize }) => {
+  execute: ({ replyMessage }) => {
     return replyMessage(helpers.mostPopular(global.hitCommand));
   }
 };

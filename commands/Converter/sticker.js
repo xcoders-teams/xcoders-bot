@@ -6,7 +6,7 @@ export default {
   description: 'Create Sticker from quoted messsge',
   usage: '%cmd% quoted or url',
   media: true,
-  execute: async ({ xcoders, m, x, query, quoted, mimetype, errorMessage }, { stickerVideo, stickerImage }, { addHitCommand }) => {
+  execute: async ({ xcoders, m, x, query, quoted, mimetype, errorMessage, stickerVideo, stickerImage, addHitCommand }) => {
     try {
       const [pack, author] = query.split('|');
       const buffer = await quoted.download();

@@ -1,7 +1,5 @@
 'use strict';
 
-import _ from 'lodash';
-
 export default {
   views: ['ytmp4'], // view for message in  menu
   command: /^yt(mp4|video|vidio)$/i, //another command.
@@ -9,7 +7,7 @@ export default {
   query: true,
   url: true,
   usage: '%cmd% url youtube',
-  execute: async ({ xcoders, x, m, query, styleMessage, invalidUrlMessage, errorMessage, waitingMessage, response, apikeys, regex, host }, { getMessage, parseResult, getJson, getBuffer }, { addHitCommand }) => {
+  execute: async ({ xcoders, x, m, query, styleMessage, invalidUrlMessage, errorMessage, waitingMessage, apikeys, regex, host, getMessage, parseResult, getJson, addHitCommand }) => {
     try {
       if (!regex.media(query)) return invalidUrlMessage(m.chat);
       const data = await getJson(`${host}/api/download/ytmp4?url=${query}&apikey=${apikeys}`);

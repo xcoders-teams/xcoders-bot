@@ -6,7 +6,7 @@ export default {
   description: 'Get Result Search From kusonime Website',
   query: true,
   usage: '%cmd%',
-  execute: async ({ xcoders, x, m, query, styleMessage, errorMessage, waitingMessage, apikeys, host }, { getMessage, getJson }, { addHitCommand }) => {
+  execute: async ({ xcoders, x, m, query, styleMessage, errorMessage, waitingMessage, apikeys, host, getMessage, getJson, addHitCommand }) => {
     try {
       const data = await getJson(`${host}/api/anime/kusonime?query=${query}&apikey=${apikeys}`);
       if (!data.status) return errorMessage(m.chat, getMessage(data), 'Kusonime Search');

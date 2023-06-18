@@ -1,6 +1,6 @@
 'use strict';
 
-import util from 'util';
+import _ from 'lodash';
 
 export default {
   views: ['sendvideo'], // view for message in  menu
@@ -10,8 +10,7 @@ export default {
   url: true,
   video: true,
   usage: '%cmd% url valid video',
-  execute: async (tools, { isVideoUrl }) => {
-    const { xcoders, waitingMessage, errorMessage, m, x, response, query } = tools;
+  execute: async ({ xcoders, waitingMessage, errorMessage, m, x, response, query, isVideoUrl }) => {
     try {
       if (!await isVideoUrl(query)) throw _.sample(response.error.url);
       await waitingMessage(m.chat);

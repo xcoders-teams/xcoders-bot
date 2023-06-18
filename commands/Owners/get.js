@@ -11,7 +11,7 @@ export default {
   query: true,
   url: true,
   usage: '%cmd% url api',
-  execute: async ({ m, replyMessage, invalidUrlMessage, errorMessage, query, regex }, { getJson }) => {
+  execute: async ({ m, replyMessage, invalidUrlMessage, errorMessage, query, regex }) => {
     try {
       if (!regex.isUrl(query)) return invalidUrlMessage(m.chat);
       const { data } = await axios.get(query);

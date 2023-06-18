@@ -1,6 +1,6 @@
 'use strict';
 
-import util from 'util';
+import _ from 'lodash';
 
 export default {
   views: ['sendaudio'], // view for message in  menu
@@ -10,8 +10,7 @@ export default {
   url: true,
   video: true,
   usage: '%cmd% url valid audio',
-  execute: async (tools, { isAudioUrl }) => {
-    const { xcoders, waitingMessage, errorMessage, m, x, response, query } = tools;
+  execute: async ({ xcoders, waitingMessage, errorMessage, m, x, response, query, isAudioUrl }) => {
     try {
       if (!await isAudioUrl(query)) throw _.sample(response.error.url);
       await waitingMessage(m.chat);

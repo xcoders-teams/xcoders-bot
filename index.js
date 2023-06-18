@@ -167,16 +167,14 @@ async function starting() {
         .outputOptions(['-metadata', `title=${fileName}`, '-metadata', 'artist=xcoders-teams'])
         .on('error', (error) => {
           throw new Error(error);
-        })
-        .on('end', async () => {
+        }).on('end', async () => {
           logger.success('Successfully...');
           const buffer = fs.readFileSync(path_files);
           const message = await prepareMessage(buffer);
           const media = generateWAMessageFromContent(jid, { documentMessage: message.documentMessage }, { quoted });
           fs.unlinkSync(path_files);
           return xcoders.relayMessage(jid, media.message, { messageId: media.key.id });
-        })
-        .pipe(stream, { end: true });
+        }).pipe(stream, { end: true });
     }
   };
 

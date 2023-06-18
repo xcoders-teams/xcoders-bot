@@ -4,6 +4,7 @@ import moment from 'moment-timezone';
 
 import loadedCommands from '../loadedCommands.js';
 import hitCommands from '../library/hitCommand.js';
+import functions from '../library/functions.js';
 
 const style = '᚛';
 const list = ['/', '&', '-', '|'];
@@ -11,7 +12,7 @@ const randomSplit = _.sample(list);
 const monospace = (str) => '```' + str + '```';
 const interline = (str) => '_' + str + '_';
 
-const allmenu = (m, prefix, name, rest, functions) => {
+const allmenu = (m, prefix, name, rest) => {
   const listFeatures = functions.requireJson('./database/commands.json');
   const { size } = fs.lstatSync('./session');
   if (Object.keys(listFeatures).length < 1) {

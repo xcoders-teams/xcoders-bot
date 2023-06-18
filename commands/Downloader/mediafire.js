@@ -7,7 +7,7 @@ export default {
     query: true,
     url: true,
     usage: '%cmd% url Mediafire',
-    execute: async ({ xcoders, x, m, query, styleMessage, invalidUrlMessage, errorMessage, waitingMessage, apikeys, regex, host }, { getMessage, parseResult, getJson }, { addHitCommand }) => {
+    execute: async ({ xcoders, x, m, query, styleMessage, invalidUrlMessage, errorMessage, waitingMessage, apikeys, regex, host, getMessage, parseResult, getJson, addHitCommand }) => {
         try {
             if (!regex.media(query)) return invalidUrlMessage(m.chat);
             const data = await getJson(`${host}/api/download/mediafire?url=${query}&apikey=${apikeys}`);

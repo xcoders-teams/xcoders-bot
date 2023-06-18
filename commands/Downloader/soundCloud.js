@@ -1,7 +1,5 @@
 'use strict';
 
-import _ from 'lodash';
-
 export default {
   views: ['soundcloud'], // view for message in  menu
   command: /^(sc(dl|down)|soundcloud)$/i, //another command.
@@ -9,7 +7,7 @@ export default {
   query: true,
   url: true,
   usage: '%cmd% url soundcloud',
-  execute: async ({ xcoders, x, m, query, styleMessage, invalidUrlMessage, errorMessage, waitingMessage, response, apikeys, regex, host }, { getMessage, parseResult, getJson }, { addHitCommand }) => {
+  execute: async ({ xcoders, x, m, query, styleMessage, invalidUrlMessage, errorMessage, waitingMessage, apikeys, regex, host, getMessage, parseResult, getJson, addHitCommand }) => {
     try {
       if (!regex.media(query)) return invalidUrlMessage(m.chat);
       const data = await getJson(`${host}/api/download/soundcloud?url=${query}&apikey=${apikeys}`);

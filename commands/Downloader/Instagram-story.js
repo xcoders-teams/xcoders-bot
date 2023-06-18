@@ -8,7 +8,7 @@ export default {
   description: 'Download media story from Instagram Url',
   query: true,
   usage: '%cmd% url/username story Instagram',
-  execute: async ({ xcoders, x, m, query, styleMessage, invalidUrlMessage, errorMessage, waitingMessage, response, apikeys, regex, host }, { getMessage, parseResult, getJson }, { addHitCommand }) => {
+  execute: async ({ xcoders, x, m, query, styleMessage, errorMessage, waitingMessage, apikeys, regex, host, getMessage, getJson, addHitCommand }) => {
     try {
       const serialize = regex.isUrl(query) ? { query: 'url', path: 'ig-stories' } : { query: 'username', path: 'ig-story' };
       const data = await getJson(`${host}/api/download/${serialize.path}?${serialize.query}=${query}&apikey=${apikeys}`);

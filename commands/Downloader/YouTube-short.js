@@ -1,6 +1,4 @@
-'use strict';
-
-import _ from 'lodash';
+'use strict'
 
 export default {
   views: ['ytshort'], // view for message in  menu
@@ -9,7 +7,7 @@ export default {
   query: true,
   url: true,
   usage: '%cmd% url youtube short',
-  execute: async ({ xcoders, x, m, query, styleMessage, invalidUrlMessage, errorMessage, waitingMessage, response, apikeys, regex, host }, { getMessage, parseResult, getJson, getBuffer }, { addHitCommand }) => {
+  execute: async ({ xcoders, x, m, query, styleMessage, invalidUrlMessage, errorMessage, waitingMessage, apikeys, regex, host, getMessage, parseResult, getJson, addHitCommand }) => {
     try {
       if (!regex.media(query)) return invalidUrlMessage(m.chat);
       const data = await getJson(`${host}/api/download/yt-short?url=${query}&apikey=${apikeys}`);

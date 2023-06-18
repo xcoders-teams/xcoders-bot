@@ -11,7 +11,7 @@ export default {
   description: 'Utility for display statistic',
   query: false,
   usage: '',
-  execute: ({ replyMessage }, { formatDuration, formatSize }) => {
+  execute: ({ replyMessage,formatDuration, formatSize }) => {
     return replyMessage(helpers.stats(os, speed, speed, formatDuration, formatSize));
   }
 };

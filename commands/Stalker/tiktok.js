@@ -8,7 +8,7 @@ export default {
   description: 'Stalking User TikTok',
   query: true,
   usage: '%cmd% fxc7_',
-  execute: async ({ xcoders, x, m, query, styleMessage, errorMessage, waitingMessage, response, apikeys, host }, { getMessage, parseResult, getJson }, { addHitCommand }) => {
+  execute: async ({ xcoders, x, m, query, styleMessage, errorMessage, waitingMessage, apikeys, host, getMessage, parseResult, getJson, addHitCommand }) => {
     try {
       const data = await getJson(`${host}/api/stalk/tiktok?username=${query}&apikey=${apikeys}`);
       if (!data.status) return errorMessage(m.chat, getMessage(data), 'Tiktok Stalk');

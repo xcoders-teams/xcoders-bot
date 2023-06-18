@@ -1,4 +1,5 @@
 import '../configs/global.js';
+import puppeteer from 'puppeteer';
 import Baileys from '@whiskeysockets/baileys';
 import url from 'url';
 import _ from 'lodash';
@@ -9,7 +10,7 @@ import moment from 'moment-timezone';
 import child from 'child_process';
 
 import regex from '../configs/regex.js';
-import hitCommands from '../library/hitCommand.js';
+import hitCommands from '../library/hitCommand.js';  
 import similarity from '../library/similarity.js';
 
 const delay = Baileys.delay;
@@ -143,14 +144,14 @@ export default async (xcoders, x, m, functions) => {
         }
         if (!allCommands.includes(command)) allCommands.push(command);
         const tools = { command, xcoders, m, x, prefix, owners, senderName, thumbnail, waitingMessage, query, replyMessage, styleMessage, invalidUrlMessage, errorMessage, response, isCreators, isBotAdminsGroups, isAdminsGroups, getParticipants, metadataGroups, apikeys, mimetype, quoted, regex, delay, host };
-        return Functions.execute(tools, functions, hitCommands);
+        return Functions.execute(Object.assign(tools, { ...functions, addHitCommand: hitCommands.addHitCommand }));
       }
     }
 
     const checkCommand = allCommands.map((str) => {
       let string = '';
       if (similarity(command, str) >= 0.5) {
-        string = `=> *${prefix + str}*\n`;
+        string = `➠ *${prefix + str}*\n`;
       }
       if (!string) return;
       return string;

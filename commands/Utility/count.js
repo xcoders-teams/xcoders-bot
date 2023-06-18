@@ -1,7 +1,5 @@
 'use strict';
 
-import path from 'path';
-
 import helpers from '../../middleware/service.js';
 
 export default {
@@ -10,7 +8,7 @@ export default {
   description: 'Utility for display count all features',
   query: false,
   usage: '',
-  execute: ({ replyMessage }, { requireJson }) => {
+  execute: ({ replyMessage, requireJson }) => {
     return replyMessage(helpers.countFeatures(requireJson));
   }
 };

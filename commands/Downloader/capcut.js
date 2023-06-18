@@ -9,7 +9,7 @@ export default {
   query: true,
   url: true,
   usage: '%cmd% url Capcut',
-  execute: async ({ xcoders, x, m, query, styleMessage, invalidUrlMessage, errorMessage, waitingMessage, apikeys, regex, host }, { getMessage, parseResult, getJson }, { addHitCommand }) => {
+  execute: async ({ xcoders, x, m, query, styleMessage, invalidUrlMessage, errorMessage, waitingMessage, apikeys, regex, host, getMessage, parseResult, getJson, addHitCommand }) => {
     try {
       if (!regex.media(query)) return invalidUrlMessage(m.chat);
       const data = await getJson(`${host}/api/download/capcut?url=${query}&apikey=${apikeys}`);
