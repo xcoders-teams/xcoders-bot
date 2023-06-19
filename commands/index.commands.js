@@ -1,5 +1,4 @@
 import '../configs/global.js';
-import puppeteer from 'puppeteer';
 import Baileys from '@whiskeysockets/baileys';
 import url from 'url';
 import _ from 'lodash';
