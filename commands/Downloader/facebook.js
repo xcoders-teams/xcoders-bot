@@ -1,7 +1,5 @@
 'use strict';
 
-import _ from 'lodash';
-
 export default {
   views: ['fbdl'], // view for message in  menu
   command: /^(fb(|dl|down)|facebook)$/i, //another command.

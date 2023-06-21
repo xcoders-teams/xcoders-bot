@@ -1,7 +1,5 @@
 'use strict';
 
-import _ from 'lodash';
-
 export default {
   views: ['capcut'], // view for message in  menu
   command: /^(cc(|dl|down)|capcut)$/i, //another command.

@@ -10,7 +10,9 @@ export default {
     try {
       const [pack, author] = query.split('|');
       const buffer = await quoted.download();
+      if (/webp/i.test(mimetype)) return errorMessage(m.chat, 'Type not supported');
       const result = /image/.test(mimetype) ? await stickerImage(buffer, { packname: pack, authorname: author }) : /video/.test(mimetype) ? await stickerVideo(buffer) : null;
+      if (!result) return errorMessage(m.chat, 'Error converting this media...', 'Sticker');
       addHitCommand('Sticker', true);
       return xcoders.sendMessage(m.chat, { sticker: result }, { quoted: x });
     } catch (error) {

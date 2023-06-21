@@ -1,4 +1,5 @@
 import '../configs/global.js';
+import puppeteer from 'puppeteer';
 import Baileys from '@whiskeysockets/baileys';
 import url from 'url';
 import _ from 'lodash';
@@ -9,7 +10,7 @@ import moment from 'moment-timezone';
 import child from 'child_process';
 
 import regex from '../configs/regex.js';
-import hitCommands from '../library/hitCommand.js';  
+import hitCommands from '../library/hitCommand.js';
 import similarity from '../library/similarity.js';
 
 const delay = Baileys.delay;
@@ -55,7 +56,9 @@ export default async (xcoders, x, m, functions) => {
       await xcoders.sendMessage(m.chat, { react: { text: '❗', key: m.key } });
       await xcoders.sendMessage(jid, { text: _.sample(response.error.url), contextInfo: { forwardingScore: 999, isForwarded: true } }, { quoted: x });
     };
-    const replyMessage = async (text) => {
+    const replyMessage = async (text, type) => {
+      if (type == 'info') await xcoders.sendMessage(m.chat, { react: { text: '❗', key: m.key } });
+      if (type == 'error') await xcoders.sendMessage(m.chat, { react: { text: '❌', key: m.key } });
       await xcoders.sendMessage(m.chat, { text, contextInfo: { forwardingScore: 999, isForwarded: true } }, { quoted: x });
     };
     const styleMessage = (title, string) => {
@@ -63,7 +66,7 @@ export default async (xcoders, x, m, functions) => {
     };
 
     if (isCommand) console.log(chalk.bgBlack.red.italic.bold(getCurrentTime), chalk.bold.italic.green(`[ EXEC ${command.toUpperCase()} ]`), chalk.italic.greenBright.bold('From'), chalk.bold.italic.yellow(senderName), m.isGroups ? chalk.italic.bold.greenBright('in ') + chalk.italic.bold.yellow(metadataGroups.subject) : '');
-    if (!isCommand) console.log(chalk.bgBlack.italic.red.bold(getCurrentTime), chalk.italic.red('[ MSG ]'), chalk.bold.italic.greenBright('From'), chalk.italic.bold.yellow(senderName), m.isGroups ? chalk.italic.bold.greenBright('in ') + chalk.italic.bold.yellow(metadataGroups.subject) : '');
+    if (!isCommand && m.mtype == 'reactionMessage') console.log(chalk.bgBlack.italic.red.bold(getCurrentTime), chalk.italic.red('[ MSG ]'), chalk.bold.italic.greenBright('From'), chalk.italic.bold.yellow(senderName), m.isGroups ? chalk.italic.bold.greenBright('in ') + chalk.italic.bold.yellow(metadataGroups.subject) : '');
     if (isCommand && m.isBaileys) return;
     if (!global.public && isCommand && !isCreators) return;
 
@@ -125,22 +128,24 @@ export default async (xcoders, x, m, functions) => {
         if (Functions.query && (query.includes('--usage') || !query)) {
           const caption = styleMessage(Functions.description, `• Usage: ${Functions.usage.replace('%cmd%', prefix + command)}`);
           return replyMessage(caption);
-        }
-        if (Functions.owner && !isCreators) return replyMessage(response.isCreator);
-        if (Functions.onlyGroup && !m.isGroups) return replyMessage('Fitur ini hanya bisa digunakan didalam group');
-        if (Functions.text && regex.isUrl(query)) return replyMessage('Query yang dibutuhkan adalah string teks.');
-        if (Functions.media && !mimetype) return replyMessage('Reply atau kirim media image atau video untuk meneruskan command tersebut.');
-        if (Functions.url && !query.startsWith('http')) {
-          if (!regex.isUrl(query)) {
-            return replyMessage('Query yang dibutuhkan adalah URL.');
-          } else if (Functions.image) {
-            if (!(await functions.isImageUrl(query))) return replyMessage('Query yang dibutuhkan adalah URL gambar yang valid.');
-          } else if (Functions.video) {
-            if (!(await functions.isVideoUrl(query))) return replyMessage('Query yang dibutuhkan adalah URL video yang valid.');
-          } else if (Functions.audio) {
-            if (!(await functions.isAudioUrl(query))) return replyMessage('Query yang dibutuhkan adalah URL audio yang valid.');
+        } else {
+          if (Functions.text && regex.isUrl(query)) return replyMessage('Query yang dibutuhkan adalah teks.', 'info');
+          if (Functions.url) {
+            if (!query.startsWith('http')) return errorMessage(m.chat, 'Invalid url query', 'info');
+            if (!regex.isUrl(query)) {
+              return replyMessage('Query yang dibutuhkan adalah URL.', 'info');
+            } else if (Functions.image) {
+              if (!(await functions.isImageUrl(query))) return replyMessage('Query yang dibutuhkan adalah URL gambar yang valid.', 'info');
+            } else if (Functions.video) {
+              if (!(await functions.isVideoUrl(query))) return replyMessage('Query yang dibutuhkan adalah URL video yang valid.', 'info');
+            } else if (Functions.audio) {
+              if (!(await functions.isAudioUrl(query))) return replyMessage('Query yang dibutuhkan adalah URL audio yang valid.', 'info');
+            }
           }
         }
+        if (Functions.owner && !isCreators) return replyMessage(response.isCreator);
+        if (Functions.onlyGroup && !m.isGroups) return replyMessage('Fitur ini hanya bisa digunakan didalam group', 'info');
+        if (Functions.media && !mimetype) return replyMessage('Reply atau kirim media image atau video untuk meneruskan command tersebut.', 'info');
         if (!allCommands.includes(command)) allCommands.push(command);
         const tools = { command, xcoders, m, x, prefix, owners, senderName, thumbnail, waitingMessage, query, replyMessage, styleMessage, invalidUrlMessage, errorMessage, response, isCreators, isBotAdminsGroups, isAdminsGroups, getParticipants, metadataGroups, apikeys, mimetype, quoted, regex, delay, host };
         return Functions.execute(Object.assign(tools, { ...functions, addHitCommand: hitCommands.addHitCommand }));
@@ -156,9 +161,9 @@ export default async (xcoders, x, m, functions) => {
       return string;
     }).join('');
     if (!checkCommand) {
-      return replyMessage('*_perintah tidak ada yang cocok, coba periksa kembali command anda!_*');
+      return replyMessage('*_perintah tidak ada yang cocok, coba periksa kembali command anda!_*', 'error');
     } else {
-      return replyMessage('```Mungkin command yang anda maksud adalah:\n\n```' + checkCommand);
+      return replyMessage('```Mungkin command yang anda maksud adalah:\n\n```' + checkCommand, 'info');
     }
   } catch (error) {
     console.error(chalk.redBright(`[ ERROR ] ${moment().format('HH:mm:ss')}`), error);

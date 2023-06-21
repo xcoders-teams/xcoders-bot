@@ -1,7 +1,5 @@
 'use strict';
 
-import _ from 'lodash';
-
 export default {
   views: ['pinterest'], // view for message in  menu
   command: /^(pin(|dl|down)|pinterest)$/i, //another command.

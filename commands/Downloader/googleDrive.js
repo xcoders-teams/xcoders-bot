@@ -1,6 +1,5 @@
 'use strict';
 
-
 export default {
     views: ['gdrive'],
     command: /^gdrive$/i,

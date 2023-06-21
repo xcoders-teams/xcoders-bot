@@ -7,7 +7,7 @@ import helpers from '../../middleware/service.js';
 
 export default {
   views: ['statistic'], // views for menu message
-  command: /^stat(|s(|ic|istic))$/i, // command another.
+  command: /^stat(s|(ic|is(tic|))|)$/i, // command another.
   description: 'Utility for display statistic',
   query: false,
   usage: '',

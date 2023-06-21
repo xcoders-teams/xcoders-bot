@@ -1,7 +1,5 @@
 'use strict';
 
-import _ from 'lodash';
-
 export default {
   views: ['tiktok'], // view for message in  menu
   command: /^(ttdl|tiktok|tt)$/i, //another command.

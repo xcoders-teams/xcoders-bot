@@ -1,7 +1,5 @@
 'use strict';
 
-import _ from 'lodash';
-
 export default {
   views: ['ifunny'], // view for message in  menu
   command: /^(ifunny(|dl|down))$/i, //another command.

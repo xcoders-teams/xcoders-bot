@@ -1,7 +1,5 @@
 'use strict';
 
-import _ from 'lodash';
-
 export default {
   views: ['instastory'], // view for message in  menu
   command: /^(instastory|storydl|igstory|igs)$/i, //another command.

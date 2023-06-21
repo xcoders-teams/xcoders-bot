@@ -1,6 +1,5 @@
 'use strict';
 
-
 export default {
   views: ['likee'], // view for message in  menu
   command: /^(likee(|dl|down))$/i, //another command.

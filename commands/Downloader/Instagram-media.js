@@ -1,7 +1,5 @@
 'use strict';
 
-import _ from 'lodash';
-
 export default {
   views: ['igdl'], // view for message in  menu
   command: /^(instadl|igdl|ig)$/i, //another command.
