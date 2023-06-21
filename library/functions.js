@@ -249,7 +249,7 @@ function xcodersFormatDuration(seconds) {
 
 
 function xcodersGetRandom(ext) {
-  return `${Math.floor(Math.random() * 10000000) + 1}${ext}`;
+  return `${Math.floor(Math.random() * 10000000) + 1}${ext.includes('.') ? ext : `.${ext}`}`;
 }
 
 async function xcodersDownloadContentMediaMessage(message, options = {}) {
@@ -290,8 +290,9 @@ function xcodersReloadModule(modulePath) {
 }
 
 async function xcodersCreateStickerImage(media, options = {}, nameExif = './temp/data.exif') {
+  const { ext } = await fileTypeFromBuffer(media);
   const tmpFileOut = path.join(process.cwd(), 'temp', xcodersGetRandom('.webp'));
-  const tmpFileIn = path.join(process.cwd(), 'temp', xcodersGetRandom('.jpg'));
+  const tmpFileIn = path.join(process.cwd(), 'temp', xcodersGetRandom(ext));
   try {
     await fs.promises.writeFile(tmpFileIn, media);
     if (options.packname || options.authorname) {
@@ -327,8 +328,9 @@ async function xcodersCreateStickerImage(media, options = {}, nameExif = './temp
 }
 
 async function xcodersCreateStickerVIdeo(media, options = {}, nameExif = './temp/data.exif') {
+  const { ext } = await fileTypeFromBuffer(media);
   const tmpFileOut = path.join(process.cwd(), 'temp', xcodersGetRandom('.webp'));
-  const tmpFileIn = path.join(process.cwd(), 'temp', xcodersGetRandom('.mp4'));
+  const tmpFileIn = path.join(process.cwd(), 'temp', xcodersGetRandom(ext));
   try {
     await fs.promises.writeFile(tmpFileIn, media);
     if (options.packname || options.authorname) {
@@ -398,7 +400,6 @@ async function exif(packname, authorname, pathname) {
 
 library.stickerVideo = xcodersCreateStickerVIdeo;
 library.stickerImage = xcodersCreateStickerImage;
-library.reloadModule = xcodersReloadModule;
 library.formatSize = xcodersFormatSize;
 library.formatDuration = xcodersFormatDuration;
 library.createShortData = xcodersCreateShortData;
@@ -410,6 +411,7 @@ library.isImageUrl = xcodersIsImageUrl;
 library.isAudioUrl = xcodersIsAudioUrl;
 library.isVideoUrl = xcodersIsVideoUrl;
 library.requireJson = xcodersRequireJson;
+library.reloadModule = xcodersReloadModule;
 library.convertToPDF = xcodersConvertToPDF;
 library.parseResult = xcodersParseResult;
 library.getMessage = xcodersLastKeysObject;
