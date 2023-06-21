@@ -2,7 +2,6 @@
 import Baileys from '@whiskeysockets/baileys';
 import fs from 'fs';
 import pino from 'pino';
-import path from 'path';
 import chalk from 'chalk';
 import ffmpeg from 'fluent-ffmpeg';
 import { fileURLToPath } from 'url';
