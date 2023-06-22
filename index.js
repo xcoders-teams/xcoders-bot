@@ -146,12 +146,14 @@ async function starting() {
 
   xcoders.sendAudioFromUrl = async (jid, url, quoted, options = {}) => {
     const mimetype = getDevice(quoted.id) == 'ios' ? 'audio/mpeg' : 'audio/mp4';
-    const prepareMessage = (buffer) => prepareWAMessageMedia({ document: buffer, mimetype, fileName: options.fileName || functions.getRandom('.mp3'), contextInfo: { externalAdReply: { title: options.title || options.fileName, body: options.body || `${global.packname} ${global.authorname}`, mediaType: 1, renderLargerThumbnail: true, showAdAttribution: true, thumbnail: options.thumbnail || global.icon, sourceUrl: options.source || global.host, mediaUrl: options.source || global.host }, forwardingScore: 999, isForwarded: true } }, { upload: xcoders.waUploadToServer, });
+    const type = options.type !== 'audio' ? 'documentMessage' : 'audioMessage';
+    const option = options.type !== 'audio' ? { externalAdReply: { title: options.title || options.fileName, body: options.body || `${global.packname} ${global.authorname}`, mediaType: 1, renderLargerThumbnail: true, showAdAttribution: true, thumbnail: options.thumbnail || global.icon, sourceUrl: options.source || global.host, mediaUrl: options.source || global.host } } : {};
+    const prepareMessage = (buffer) => prepareWAMessageMedia({ [options.type || 'document']: buffer, mimetype, fileName: options.fileName || functions.getRandom('.mp3'), contextInfo: { ...option, forwardingScore: 999, isForwarded: true } }, { upload: xcoders.waUploadToServer, });
     if (!options.ffmpeg) {
       const result = await functions.getBuffer(url);
       await delay(1000);
       const message = await prepareMessage(result);
-      const media = generateWAMessageFromContent(jid, { documentMessage: message.documentMessage }, { quoted });
+      const media = generateWAMessageFromContent(jid, { [type]: message[type] }, { quoted });
       return xcoders.relayMessage(jid, media.message, { messageId: media.key.id });
     } else {
       const fileName = options.fileName || functions.getRandom('.mp3');
@@ -170,7 +172,7 @@ async function starting() {
           logger.success('Successfully...');
           const buffer = fs.readFileSync(path_files);
           const message = await prepareMessage(buffer);
-          const media = generateWAMessageFromContent(jid, { documentMessage: message.documentMessage }, { quoted });
+          const media = generateWAMessageFromContent(jid, { [type]: message[type] }, { quoted });
           fs.unlinkSync(path_files);
           return xcoders.relayMessage(jid, media.message, { messageId: media.key.id });
         }).pipe(stream, { end: true });

@@ -16,9 +16,9 @@ async function loadCommands(functions) {
           if (command) {
             global.headersCommands.push({ category: plugin, command: command.views });
             if (allCommand.length < 1) {
-              global.allCommands.push(...command.views);
+              global.allCommands.push(command.views[0].split(' ')[0]);
             } else {
-              global.allCommands.push(...allCommand, ...command.views);
+              global.allCommands.push(...allCommand, command.views[0].split(' ')[0]);
             }
             global.allCommands = [...new Set(global.allCommands)];
             global.plugins[`${plugin}-${filename}`] = command;
