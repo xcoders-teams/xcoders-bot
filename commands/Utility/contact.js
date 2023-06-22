@@ -33,7 +33,7 @@ export default {
       }
       return xcoders.sendMessage(m.chat, { contacts: { displayName: 'WhatsApp Owners', contacts: [...contacts] }, contextInfo: { isForwarded: true, forwardingScore: 999 } }, { quoted: x });
     } catch (error) {
-      throw util.format(error);
+      return errorMessage(m.chat, error);
     }
   }
 };

@@ -1,7 +1,7 @@
 'use strict';
 
 export default {
-  views: ['likee'], // view for message in  menu
+  views: ['likee < url >'], // view for message in  menu
   command: /^(likee(|dl|down))$/i, //another command.
   description: 'Download video from Likee Url',
   query: true,
@@ -18,8 +18,7 @@ export default {
       addHitCommand('Likee', true);
       return xcoders.sendFileFromUrl(m.chat, data.result.nowatermark, caption, x, { thumbnail: null });
     } catch (error) {
-      addHitCommand('Likee', false);
-      throw error;
+      return errorMessage(m.chat, error, 'Likee');
     }
   }
 };

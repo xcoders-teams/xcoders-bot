@@ -1,7 +1,7 @@
 'use strict';
 
 export default {
-  views: ['igstalk'], // view for message in  menu
+  views: ['igstalk < username >'], // view for message in  menu
   command: /^stalkig|igstalk$/i, //another command.
   description: 'Stalking User Instagram',
   query: true,
@@ -16,8 +16,7 @@ export default {
       addHitCommand('Instagram Stalk', true);
       return xcoders.sendFileFromUrl(m.chat, data.result.profile_url, caption, x, { thumbnail: null });
     } catch (error) {
-      addHitCommand('Instagram Stalk', false);
-      throw error;
+      return errorMessage(m.chat, error, 'Instagram Stalk');
     }
   }
 };

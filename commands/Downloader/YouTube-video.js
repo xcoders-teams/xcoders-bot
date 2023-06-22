@@ -1,7 +1,7 @@
 'use strict';
 
 export default {
-  views: ['ytmp4'], // view for message in  menu
+  views: ['ytmp4 < url >'], // view for message in  menu
   command: /^yt(mp4|video|vidio)$/i, //another command.
   description: 'Download video from YouTube Url',
   query: true,
@@ -18,8 +18,7 @@ export default {
       addHitCommand('YouTube Video', true);
       return xcoders.sendFileFromUrl(m.chat, data.result.url, caption, x, { mimetype: 'video/mp4', jpegThumbnail: data.result.thumbnail });
     } catch (error) {
-      addHitCommand('YouTube Video', false);
-      throw error;
+      return errorMessage(m.chat, error, 'YouTube Video');
     }
   }
 };

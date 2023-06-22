@@ -12,7 +12,7 @@ export default {
                 return errorMessage(m.chat, 'Reply to a message that contains a quote');
             }
             return quotedMessage.quoted.copyAndForward(m.chat, true);
-        } catch (e) {
+        } catch (error) {
             return errorMessage(m.chat, 'Reply to a message that contains a quote');
         }
     }

@@ -1,7 +1,7 @@
 'use strict';
 
 export default {
-  views: ['ytmp3'], // view for message in  menu
+  views: ['ytmp3 < url >'], // view for message in  menu
   command: /^yt(mp3|music|musik|audio)$/i, //another command.
   description: 'Download music from YouTube Url',
   query: true,
@@ -20,8 +20,7 @@ export default {
       addHitCommand('YouTube Music', true);
       return xcoders.sendAudioFromUrl(m.chat, data.result.url, x, { fileName: data.result.title + '.mp3', title: data.result.title, thumbnail, source: query, ffmpeg: false });
     } catch (error) {
-      addHitCommand('YouTube Music', false);
-      throw error;
+      return errorMessage(m.chat, error, 'YouTube Music');
     }
   }
 };

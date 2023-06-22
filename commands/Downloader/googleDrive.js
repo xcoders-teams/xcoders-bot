@@ -1,7 +1,7 @@
 'use strict';
 
 export default {
-    views: ['gdrive'],
+    views: ['gdrive < url >'],
     command: /^gdrive$/i,
     description: 'Google Drive Download From url',
     query: true,
@@ -18,8 +18,7 @@ export default {
             addHitCommand('Google Drive', true);
             return xcoders.sendFileFromUrl(m.chat, data.result.url, response, x, { mimetype: data.result.mimetype });
         } catch (error) {
-            addHitCommand('Google Drive', false);
-            throw error;
+            return errorMessage(m.chat, error, 'Google Drive');
         }
     }
 }

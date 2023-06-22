@@ -1,7 +1,7 @@
 'use strict';
 
 export default {
-    views: ['apkdl'], // view for message in  menu
+    views: ['apkdl < url >'], // view for message in  menu
     command: /^apk(|dl|down)$/i, //another command.
     description: 'Download Files from apkdl Url',
     query: true,
@@ -18,8 +18,7 @@ export default {
             addHitCommand('Apkdl Downloader', true);
             return xcoders.sendFileFromUrl(m.chat, data.result.url, caption, x, { thumbnail: null });
         } catch (error) {
-            addHitCommand('Apkdl Downloader', false);
-            throw error;
+            return errorMessage(m.chat, error, 'Apkdl Downloader');
         }
     }
 };

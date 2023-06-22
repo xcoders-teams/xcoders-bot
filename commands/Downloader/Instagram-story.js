@@ -1,7 +1,7 @@
 'use strict';
 
 export default {
-  views: ['instastory'], // view for message in  menu
+  views: ['instastory < url : username >'], // view for message in  menu
   command: /^(instastory|storydl|igstory|igs)$/i, //another command.
   description: 'Download media story from Instagram Url',
   query: true,
@@ -19,8 +19,7 @@ export default {
         await xcoders.sendFileFromUrl(m.chat, url, caption, x);
       }
     } catch (error) {
-      addHitCommand('Instagram Story', false);
-      throw error;
+      return errorMessage(m.chat, error, 'Instagram Story');
     }
   }
 };

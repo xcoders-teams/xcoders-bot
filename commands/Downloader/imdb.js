@@ -1,7 +1,7 @@
 'use strict';
 
 export default {
-    views: ['imdb'], // view for message in  menu
+    views: ['imdb < url >'], // view for message in  menu
     command: /^imdb(|dl|down)$/i, //another command.
     description: 'Download video from IMDB Url',
     query: true,
@@ -18,8 +18,7 @@ export default {
             addHitCommand('IMDB Downloader', true);
             return xcoders.sendFileFromUrl(m.chat, data.result.data[0].url, caption, x, { thumbnail: null });
         } catch (error) {
-            addHitCommand('IMDB Downloader', false);
-            throw error;
+            return errorMessage(m.chat, error, 'IMDB Downloader');
         }
     }
 };

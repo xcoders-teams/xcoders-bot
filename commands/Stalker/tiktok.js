@@ -3,7 +3,7 @@
 import _ from 'lodash';
 
 export default {
-  views: ['ttstalk'], // view for message in  menu
+  views: ['ttstalk < username >'], // view for message in  menu
   command: /^stalktt|ttstalk$/i, //anothm.chater command.
   description: 'Stalking User TikTok',
   query: true,
@@ -18,8 +18,7 @@ export default {
       addHitCommand('Tiktok Stalk', true);
       return xcoders.sendFileFromUrl(m.chat, data.result.url, caption, x, { thumbnail: null });
     } catch (error) {
-      addHitCommand('Tiktok Stalk', false);
-      throw error;
+      return errorMessage(m.chat, error, 'Tiktok Stalk');
     }
   }
 };

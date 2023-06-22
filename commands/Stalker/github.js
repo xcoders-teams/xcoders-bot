@@ -1,7 +1,7 @@
 'use strict';
 
 export default {
-  views: ['ghstalk'], // view for message in  menu
+  views: ['ghstalk < username >'], // view for message in  menu
   command: /^stalkgh|ghstalk$/i, //another command.
   description: 'Stalking User Github',
   query: true,
@@ -16,8 +16,7 @@ export default {
       addHitCommand('Github Stalk', true);
       return xcoders.sendFileFromUrl(m.chat, data.result.profile_url, caption, x, { thumbnail: null });
     } catch (error) {
-      addHitCommand('Github Stalk', false);
-      throw error;
+      return errorMessage(m.chat, error, 'Github Stalk');
     }
   }
 };

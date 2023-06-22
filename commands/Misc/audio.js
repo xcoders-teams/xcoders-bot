@@ -3,7 +3,7 @@
 import _ from 'lodash';
 
 export default {
-  views: ['sendaudio'], // view for message in  menu
+  views: ['sendaudio < url >'], // view for message in  menu
   command: /^send(audio|music|musik)$/i, //another command.
   description: 'Send Video from Url valid',
   query: true,

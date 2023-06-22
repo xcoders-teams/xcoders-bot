@@ -1,7 +1,7 @@
 'use strict';
 
 export default {
-  views: ['tahta'], // view for message in  menu
+  views: ['tahta < text >'], // view for message in  menu
   command: /^tahta$/i, //another command.
   description: 'Create Tahta quotes images',
   usage: '%cmd% xcoders',

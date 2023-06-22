@@ -1,7 +1,7 @@
 'use strict';
 
 export default {
-  views: ['kusonime'], // view for message in  menu
+  views: ['kusonime < query >'], // view for message in  menu
   command: /^kusonime/i, //another command.
   description: 'Get Result Search From kusonime Website',
   query: true,
@@ -25,7 +25,7 @@ export default {
       addHitCommand('Kusonime Search', true);
       return xcoders.sendFileFromUrl(m.chat, data.result[0].thumbnail, caption, x);
     } catch (error) {
-      return errorMessage(m.chat, error.message ? error.message : error, 'Kusonime Search');
+      return errorMessage(m.chat, error, 'Kusonime Search');
     }
   }
 };

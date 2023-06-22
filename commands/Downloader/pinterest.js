@@ -1,7 +1,7 @@
 'use strict';
 
 export default {
-  views: ['pinterest'], // view for message in  menu
+  views: ['pinterest < url >'], // view for message in  menu
   command: /^(pin(|dl|down)|pinterest)$/i, //another command.
   description: 'Download video from Pinterest Url',
   query: true,
@@ -11,15 +11,14 @@ export default {
     try {
       if (!regex.media(query)) return invalidUrlMessage(m.chat);
       const data = await getJson(`${host}/api/download/pinterest?url=${query}&apikey=${apikeys}`);
-      if (!data.status) return errorMessage(m.chat, getMessage(data), 'Pinterest');
+      if (!data.status) return errorMessage(m.chat, getMessage(data), 'Pinterest Downloader');
       await waitingMessage(m.chat);
       const result = parseResult(data.result);
       const caption = styleMessage('Pinterest Video Downloader', result);
-      addHitCommand('Pinterest', true);
+      addHitCommand('Pinterest Downloader', true);
       return xcoders.sendFileFromUrl(m.chat, data.result.url, caption, x, { thumbnail: null });
     } catch (error) {
-      addHitCommand('Pinterest', false);
-      throw error;
+      return errorMessage(m.chat, error, 'Pinterest Downloader');
     }
   }
 };

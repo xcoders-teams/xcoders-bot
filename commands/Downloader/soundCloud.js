@@ -1,7 +1,7 @@
 'use strict';
 
 export default {
-  views: ['soundcloud'], // view for message in  menu
+  views: ['soundcloud < url >'], // view for message in  menu
   command: /^(sc(dl|down)|soundcloud)$/i, //another command.
   description: 'Download music from SoundCloud Url',
   query: true,
@@ -20,8 +20,7 @@ export default {
       addHitCommand('Sound Cloud', true);
       return xcoders.sendAudioFromUrl(m.chat, data.result.url, x, { title: data.result.title, fileName: `${data.result.title}.mp3`, thumbnail: buffer, source: query });
     } catch (error) {
-      addHitCommand('Sound Cloud', false);
-      throw error;
+      return errorMessage(m.chat, error, 'Sound Cloud');
     }
   }
 };

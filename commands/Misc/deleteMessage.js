@@ -7,6 +7,6 @@ export default {
     usage: '%cmd% reply Messages',
     execute: async ({ replyMessage, m, errorMessage, response }) => {
         if (!m.quoted) return errorMessage(m.chat, 'Reply message for delete message');
-        return m.quoted.delete().then(() => replyMessage(response.success));
+        return m.quoted.delete().then(() => replyMessage(response.success)).catch((error) => errorMessage(m.chat, error));
     }
 }

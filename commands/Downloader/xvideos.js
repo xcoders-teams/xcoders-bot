@@ -1,7 +1,7 @@
 'use strict';
 
 export default {
-  views: ['xvideosdl'], // view for message in  menu
+  views: ['xvideosdl < url >'], // view for message in  menu
   command: /^xvideos(|dl)$/i, //another command.
   description: 'Download video from Xvideos Url',
   query: true,
@@ -11,15 +11,14 @@ export default {
     try {
       if (!regex.media(query)) return invalidUrlMessage(m.chat);
       const data = await getJson(`${host}/api/download/xvideos?url=${query}&apikey=${apikeys}`);
-      if (!data.status) return errorMessage(m.chat, getMessage(data), 'Xvideos Download');
+      if (!data.status) return errorMessage(m.chat, getMessage(data), 'Xvideos Downloader');
       await waitingMessage(m.chat);
       const result = parseResult(data.result);
       const caption = styleMessage('Xvideos Video Downloader', result);
-      addHitCommand('Xvideos Download', true);
+      addHitCommand('Xvideos Downloader', true);
       return xcoders.sendFileFromUrl(m.chat, data.result.url, caption, x, { thumbnail: null });
     } catch (error) {
-      addHitCommand('Xvideos Download', false);
-      throw error;
+      return errorMessage(m.chat, error, 'Xvideos Downloader');
     }
   }
 };

@@ -46,10 +46,10 @@ export default async (xcoders, x, m, functions) => {
     };
     const errorMessage = async (jid, msg, title) => {
       if (title) hitCommands.addHitCommand(title, false);
-      msg = msg?.message || typeof msg === 'string' ? msg : _.sample(response.error.request);
+      const serializeMessage = msg.message ? msg.message : typeof msg === 'string' ? msg : _.sample(response.error.request);
       await xcoders.sendMessage(m.chat, { react: { text: '❌', key: m.key } });
-      await xcoders.sendMessage(jid, { text: /\*/.test(msg) ? msg : `*${msg}*`, contextInfo: { forwardingScore: 999, isForwarded: true } }, { quoted: x });
-      console.log(msg.replace(/[^a-zA-Z0-9 ]/, ''));
+      await xcoders.sendMessage(jid, { text: /\*/.test(serializeMessage) ? serializeMessage : `*${serializeMessage}*`, contextInfo: { forwardingScore: 999, isForwarded: true } }, { quoted: x });
+      console.error(msg);
     };
     const invalidUrlMessage = async (jid) => {
       await xcoders.sendMessage(m.chat, { react: { text: '❗', key: m.key } });
@@ -65,7 +65,7 @@ export default async (xcoders, x, m, functions) => {
     };
 
     if (isCommand) console.log(chalk.bgBlack.red.italic.bold(getCurrentTime), chalk.bold.italic.green(`[ EXEC ${command.toUpperCase()} ]`), chalk.italic.greenBright.bold('From'), chalk.bold.italic.yellow(senderName), m.isGroups ? chalk.italic.bold.greenBright('in ') + chalk.italic.bold.yellow(metadataGroups.subject) : '');
-    if (!isCommand && m.mtype == 'reactionMessage') console.log(chalk.bgBlack.italic.red.bold(getCurrentTime), chalk.italic.red('[ MSG ]'), chalk.bold.italic.greenBright('From'), chalk.italic.bold.yellow(senderName), m.isGroups ? chalk.italic.bold.greenBright('in ') + chalk.italic.bold.yellow(metadataGroups.subject) : '');
+    if (!isCommand) console.log(chalk.bgBlack.italic.red.bold(getCurrentTime), chalk.italic.red('[ MSG ]'), chalk.bold.italic.greenBright('From'), chalk.italic.bold.yellow(senderName), m.isGroups ? chalk.italic.bold.greenBright('in ') + chalk.italic.bold.yellow(metadataGroups.subject) : '');
     if (isCommand && m.isBaileys) return;
     if (!global.public && isCommand && !isCreators) return;
 

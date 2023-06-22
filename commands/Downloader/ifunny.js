@@ -1,7 +1,7 @@
 'use strict';
 
 export default {
-  views: ['ifunny'], // view for message in  menu
+  views: ['ifunny < url >'], // view for message in  menu
   command: /^(ifunny(|dl|down))$/i, //another command.
   description: 'Download video from Ifunny Url',
   query: true,
@@ -19,8 +19,7 @@ export default {
       addHitCommand('Ifunny', true);
       return xcoders.sendFileFromUrl(m.chat, metadata.url, caption, x, { thumbnail: null });
     } catch (error) {
-      addHitCommand('Ifunny', false);
-      throw error;
+      return errorMessage(m.chat, error, 'Ifunny');
     }
   }
 };

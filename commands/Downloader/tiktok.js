@@ -1,7 +1,7 @@
 'use strict';
 
 export default {
-  views: ['tiktok'], // view for message in  menu
+  views: ['tiktok < url >'], // view for message in  menu
   command: /^(ttdl|tiktok|tt)$/i, //another command.
   description: 'Download media from Tiktok Url',
   query: true,
@@ -11,11 +11,11 @@ export default {
     try {
       if (!regex.media(query)) return invalidUrlMessage(m.chat);
       const data = await getJson(`${host}/api/download/tiktok?url=${query}&apikey=${apikeys}`);
-      if (!data.status) return errorMessage(m.chat, getMessage(data), 'Tiktok');
+      if (!data.status) return errorMessage(m.chat, getMessage(data), 'Tiktok Downloader');
       await waitingMessage(m.chat);
       const result = parseResult(data.result);
       const caption = styleMessage('Tiktok Media Downloader', result);
-      addHitCommand('Tiktok', true);
+      addHitCommand('Tiktok Downoader', true);
       if (data.result.result_url) {
         for (let { display_image } of data.result.result_url) {
           await xcoders.sendFileFromUrl(m.chat, display_image.url_list[1], caption, x);
@@ -24,8 +24,7 @@ export default {
         return xcoders.sendFileFromUrl(m.chat, data.result.video_nowatermark, caption, x);
       }
     } catch (error) {
-      addHitCommand('Tiktok', false);
-      throw error;
+      return errorMessage(m.chat, error, 'Tiktok Downloader');
     }
   }
 };

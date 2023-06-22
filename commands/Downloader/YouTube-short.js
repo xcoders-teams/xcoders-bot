@@ -1,7 +1,7 @@
 'use strict'
 
 export default {
-  views: ['ytshort'], // view for message in  menu
+  views: ['ytshort < url >'], // view for message in  menu
   command: /^ytshort$/i, //another command.
   description: 'Download video from YouTube Url',
   query: true,
@@ -18,8 +18,7 @@ export default {
       addHitCommand('YouTube Short', true);
       return xcoders.sendFileFromUrl(m.chat, data.result.url, caption, x, { mimetype: 'video/mp4' });
     } catch (error) {
-      addHitCommand('YouTube Short', false);
-      throw error;
+      return errorMessage(m.chat, error, 'YouTube Short');
     }
   }
 };

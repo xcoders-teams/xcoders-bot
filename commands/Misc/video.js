@@ -3,7 +3,7 @@
 import _ from 'lodash';
 
 export default {
-  views: ['sendvideo'], // view for message in  menu
+  views: ['sendvideo < url >'], // view for message in  menu
   command: /^send(video|vidio)$/i, //another command.
   description: 'Send Video from Url valid',
   query: true,

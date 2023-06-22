@@ -1,7 +1,7 @@
 'use strict';
 
 export default {
-  views: ['igdl'], // view for message in  menu
+  views: ['igdl < url >'], // view for message in  menu
   command: /^(instadl|igdl|ig)$/i, //another command.
   description: 'Download media from Instagram Url',
   query: true,
@@ -20,8 +20,7 @@ export default {
         await xcoders.sendFileFromUrl(m.chat, url, caption, x);
       }
     } catch (error) {
-      addHitCommand('Instagram Media', false);
-      throw error;
+      return errorMessage(m.chat, error, 'Instagram Media');
     }
   }
 };

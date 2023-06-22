@@ -3,7 +3,7 @@
 import _ from 'lodash';
 
 export default {
-  views: ['fbdl'], // view for message in  menu
+  views: ['fbdl < url >'], // view for message in  menu
   command: /^(cocofun(|dl|down))$/i, //another command.
   description: 'Download video from Cocofun Url',
   query: true,
@@ -20,8 +20,7 @@ export default {
       addHitCommand('Cocofun', true);
       return xcoders.sendFileFromUrl(m.chat, data.result.url, caption, x, { thumbnail: null });
     } catch (error) {
-      addHitCommand('Cocofun', false);
-      throw error;
+      return errorMessage(m.chat, error, 'Cocofun');
     }
   }
 };

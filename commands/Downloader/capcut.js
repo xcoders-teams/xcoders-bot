@@ -1,7 +1,7 @@
 'use strict';
 
 export default {
-  views: ['capcut'], // view for message in  menu
+  views: ['capcut < url >'], // view for message in  menu
   command: /^(cc(|dl|down)|capcut)$/i, //another command.
   description: 'Download video from Capcut Url',
   query: true,
@@ -18,8 +18,7 @@ export default {
       addHitCommand('Capcut', true);
       return xcoders.sendFileFromUrl(m.chat, data.result.url, caption, x, { thumbnail: null });
     } catch (error) {
-      addHitCommand('Capcut', false);
-      throw error;
+      return errorMessage(m.chat, error, 'Capcut');
     }
   }
 };

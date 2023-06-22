@@ -1,7 +1,7 @@
 'use strict';
 
 export default {
-    views: ['mediafire'], // view for message in  menu
+    views: ['mediafire < url >'], // view for message in  menu
     command: /^(mfdl|mediafire)$/i, //another command.
     description: 'Download Files from Mediafire Url',
     query: true,
@@ -18,8 +18,7 @@ export default {
             addHitCommand('Mediafire Downloader', true);
             return xcoders.sendFileFromUrl(m.chat, data.result.url, caption, x, { thumbnail: null });
         } catch (error) {
-            addHitCommand('Mediafire Downloader', false);
-            throw error;
+            return errorMessage(m.chat, error, 'Mediafire Downloader');
         }
     }
 };

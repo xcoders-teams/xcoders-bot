@@ -1,7 +1,7 @@
 'use strict';
 
 export default {
-  views: ['twitstalk'], // view for message in  menu
+  views: ['twitstalk < username >'], // view for message in  menu
   command: /^stalktwit|twitstalk$/i, //another command.
   description: 'Stalking User Twitter',
   query: true,
@@ -16,8 +16,7 @@ export default {
       addHitCommand('Twitter Stalk', true);
       return xcoders.sendFileFromUrl(m.chat, data.result.profile_url, caption, x, { thumbnail: null });
     } catch (error) {
-      addHitCommand('Twitter Stalk', false);
-      throw error;
+      return errorMessage(m.chat, error, 'Twitter Stalk');
     }
   }
 };
