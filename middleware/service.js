@@ -7,7 +7,7 @@ import hitCommands from '../library/hitCommand.js';
 import functions from '../library/functions.js';
 
 const style = '᚛';
-const list = ['/', '&', '-', '|'];
+const list = ['/', 'or'];
 const randomSplit = _.sample(list);
 const monospace = (str) => '```' + str + '```';
 const interline = (str) => '_' + str + '_';
@@ -21,13 +21,17 @@ const allmenu = (m, prefix, name, rest) => {
   let position = '';
   let assignFeatures = _.assign(listFeatures);
   Object.keys(listFeatures).forEach((a) => {
-    position += `\t\t\t</ *${a.replace(/[^a-zA-Z0-9]/g, ' ')}* >\n${interline(style + ' ' + prefix + assignFeatures[a].join('_\n_' + style + ' ' + prefix))}\n\n`;
+    position += `\t\t\t</ *${a.replace(/[^a-zA-Z0-9]/g, ' ')}* >\n${interline(style + ' ' + prefix + assignFeatures[a].join('_\n_' + style + ' ' + prefix).replaceAll('<', '*<').replaceAll('>', '>*').replace(':', randomSplit))}\n\n`;
   });
   return `
 ▪ ${monospace(`Hallo ${name} ⌈ @${m.sender.split('@')[0]} ⌋`)} 👋
 ▪ *Date*: ${monospace(moment().tz('Asia/Jakarta').locale('id').format('LLL'))}
 ▪ *Api*: ${monospace(rest)}
 ▪ *Session*: ${monospace(functions.formatSize(size))}
+
+▪ *Notes*:
+  ${style + ' ' + monospace('Gunakan Fitur tanpa simbol <>')}
+  ${style + ' ' + monospace('Jangan spam bot...')}
 
 ${position}
 ${hitCommands.popularCommand(1) ? `▪ *3 Most Popular Features*\n${hitCommands.popularCommand(3).slice(0, -2)}` : ''}`;

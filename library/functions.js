@@ -7,6 +7,7 @@ import https from 'https';
 import pdfkit from 'pdfkit';
 import crypto from 'crypto';
 import fetch from 'node-fetch';
+import webpmux from 'node-webpmux';
 import Module from 'module';
 import _ from 'lodash';
 import url from 'url';
@@ -244,7 +245,7 @@ function xcodersFormatDuration(seconds) {
   if (remainingSeconds > 0) {
     durationParts.push(remainingSeconds + (remainingSeconds === 1 ? ' second' : ' seconds'));
   }
-  return durationParts.length === 0 ? '0 seconds' : durationParts.length === 1 ? durationParts[0] : durationParts.length === 2 ? durationParts.join(' and ') : durationParts.join(', ') + ', and ' + durationParts.pop();
+  return durationParts.length === 0 ? '0 seconds' : durationParts.length === 1 ? durationParts[0] : durationParts.length === 2 ? durationParts.join(' and ') : durationParts.join(', ');
 }
 
 
@@ -297,19 +298,19 @@ async function xcodersCreateStickerImage(media, options = {}, nameExif = './temp
     await fs.promises.writeFile(tmpFileIn, media);
     if (options.packname || options.authorname) {
       nameExif = './temp/' + xcodersGetRandom('.exif');
-      await exif(options.packname, options.authorname, nameExif);
+      await createExif(options.packname, options.authorname, nameExif);
     }
-    if (!fs.existsSync(nameExif)) await exif(global.packname, global.authorname, nameExif);
+    if (!fs.existsSync(nameExif)) await createExif(global.packname, global.authorname, nameExif);
     await new Promise((resolve, reject) => {
       ffmpeg(tmpFileIn)
         .on('error', reject)
         .on('end', async () => {
           try {
             await exec(`webpmux -set exif ${nameExif} ${tmpFileOut} -o ${tmpFileOut}`);
-            await fs.promises.unlink(nameExif);
+            if (!/data\.exif/.test(nameExif)) await fs.promises.unlink(nameExif);
             resolve(true);
           } catch (error) {
-            await fs.promises.unlink(nameExif);
+            if (!/data\.exif/.test(nameExif)) await fs.promises.unlink(nameExif);
             reject(error);
           }
         })
@@ -327,6 +328,30 @@ async function xcodersCreateStickerImage(media, options = {}, nameExif = './temp
   }
 }
 
+async function xcodersCreateSticker(media, options = {}) {
+  const tmpFileOut = path.join(process.cwd(), 'temp', xcodersGetRandom('.webp'));
+  const tmpFileIn = path.join(process.cwd(), 'temp', xcodersGetRandom('.webp'));
+  try {
+    await fs.promises.writeFile(tmpFileIn, media);
+    const image = new webpmux.Image();
+    const pathExif = './temp/' + xcodersGetRandom('.exif');
+    await createExif(options.packname, options.authorname, pathExif);
+    const exif = await fs.promises.readFile(pathExif);
+    if (fs.existsSync(pathExif)) await fs.promises.unlink(pathExif);
+    await image.load(tmpFileIn);
+    image.exif = exif;
+    await image.save(tmpFileOut);
+    const buffer = await fs.promises.readFile(tmpFileOut);
+    if (fs.existsSync(tmpFileIn)) await fs.promises.unlink(tmpFileIn);
+    if (fs.existsSync(tmpFileOut)) await fs.promises.unlink(tmpFileOut);
+    return buffer;
+  } catch (error) {
+    if (fs.existsSync(tmpFileIn)) await fs.promises.unlink(tmpFileIn);
+    if (fs.existsSync(tmpFileOut)) await fs.promises.unlink(tmpFileOut);
+    throw error;
+  }
+}
+
 async function xcodersCreateStickerVIdeo(media, options = {}, nameExif = './temp/data.exif') {
   const { ext } = await fileTypeFromBuffer(media);
   const tmpFileOut = path.join(process.cwd(), 'temp', xcodersGetRandom('.webp'));
@@ -335,17 +360,19 @@ async function xcodersCreateStickerVIdeo(media, options = {}, nameExif = './temp
     await fs.promises.writeFile(tmpFileIn, media);
     if (options.packname || options.authorname) {
       nameExif = './temp/' + xcodersGetRandom('.exif');
-      await exif(options.packname, options.authorname, nameExif);
+      await createExif(options.packname, options.authorname, nameExif);
     }
-    if (!fs.existsSync(nameExif)) await exif(global.packname, global.authorname, nameExif);
+    if (!fs.existsSync(nameExif)) await createExif(global.packname, global.authorname, nameExif);
     await new Promise((resolve, reject) => {
       ffmpeg(tmpFileIn)
         .on('error', reject)
         .on('end', async () => {
           try {
             await exec(`webpmux -set exif ${nameExif} ${tmpFileOut} -o ${tmpFileOut}`);
+            if (!/data\.exif/.test(nameExif)) await fs.promises.unlink(nameExif);
             resolve(true);
           } catch (error) {
+            if (!/data\.exif/.test(nameExif)) await fs.promises.unlink(nameExif);
             reject(error);
           }
         })
@@ -377,7 +404,7 @@ function reactEmoji() {
   return emojiList[randomEmoji];
 }
 
-async function exif(packname, authorname, pathname) {
+async function createExif(packname, authorname, pathname) {
   if (fs.existsSync(pathname)) return true;
   const pack = {
     'sticker-pack-id': 'com.snowcorp.stickerly.android.stickercontentprovider b5e7275f-f1de-4137-961f-57becfad34f2',
@@ -398,6 +425,7 @@ async function exif(packname, authorname, pathname) {
   return true;
 }
 
+library.createWatermark = xcodersCreateSticker;
 library.stickerVideo = xcodersCreateStickerVIdeo;
 library.stickerImage = xcodersCreateStickerImage;
 library.formatSize = xcodersFormatSize;
