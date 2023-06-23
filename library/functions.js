@@ -47,6 +47,11 @@ function xcodersParseResult(input) {
   return parseInput.parse(input);
 }
 
+function xcodersCapitalized(text) {
+  const parsed = new ParseResult();
+  return parsed.capitalized(text);
+}
+
 function xcodersRequireJson(pathFiles) {
   if (!fs.existsSync(pathFiles)) throw new Error('files not exists.');
   const readFiles = fs.readFileSync(pathFiles);
@@ -206,12 +211,17 @@ async function xcodersGetJson(url, options = {}) {
     };
     const response = await new Promise((resolve, reject) => {
       const req = protocol.request(url, requestOptions, (res) => {
-        const chunks = [];
-        res.on('data', (chunk) => chunks.push(chunk));
-        res.on('end', () => {
-          const data = Buffer.concat(chunks).toString();
-          resolve({ status: res.statusCode, data });
-        });
+        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+          const redirectUrl = new URL(res.headers.location, url);
+          xcodersGetJson(redirectUrl.href, options).then(resolve).catch(reject);
+        } else {
+          const chunks = [];
+          res.on('data', (chunk) => chunks.push(chunk));
+          res.on('end', () => {
+            const data = Buffer.concat(chunks).toString();
+            resolve({ status: res.statusCode, message: res.statusMessage, data });
+          });
+        }
       });
       req.on('error', reject);
       if (options.data) {
@@ -219,12 +229,18 @@ async function xcodersGetJson(url, options = {}) {
       }
       req.end();
     });
-    return JSON.parse(response.data);
+    const result = response.data;
+    try {
+      const jsonData = JSON.parse(result);
+      return jsonData;
+    } catch (error) {
+      return { status: response.status, message: response.message };
+    }
   } catch (error) {
-    throw error;
+    console.error(error);
+    return { status: false, message: error };
   }
 }
-
 
 function xcodersFormatDuration(seconds) {
   seconds = Number(seconds);
@@ -245,7 +261,7 @@ function xcodersFormatDuration(seconds) {
   if (remainingSeconds > 0) {
     durationParts.push(remainingSeconds + (remainingSeconds === 1 ? ' second' : ' seconds'));
   }
-  return durationParts.length === 0 ? '0 seconds' : durationParts.length === 1 ? durationParts[0] : durationParts.length === 2 ? durationParts.join(' and ') : durationParts.join(', ');
+  return durationParts.length === 0 ? '0 seconds' : durationParts.length === 1 ? durationParts[0] : durationParts.length === 2 ? durationParts.join(', ') : durationParts.join(', ');
 }
 
 
@@ -442,6 +458,7 @@ library.requireJson = xcodersRequireJson;
 library.reloadModule = xcodersReloadModule;
 library.convertToPDF = xcodersConvertToPDF;
 library.parseResult = xcodersParseResult;
+library.capitalize = xcodersCapitalized;
 library.getMessage = xcodersLastKeysObject;
 
 export default library;

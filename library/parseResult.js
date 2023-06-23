@@ -8,6 +8,10 @@ function capitalize(text) {
 
 class parseResult {
 
+  capitalized(text) {
+    return capitalize(text);
+  }
+
   parseArray(arr) {
     let result = '';
     for (let i = 0; i < arr.length; i++) {
