@@ -6,8 +6,8 @@ export default {
   description: 'Get Result Search From kusonime Website',
   query: true,
   text: true,
-  usage: '%cmd%',
-  execute: async ({ xcoders, x, m, query, styleMessage, errorMessage, waitingMessage, apikeys, host, getMessage, getJson, addHitCommand }) => {
+  usage: '%cmd% naruto',
+  execute: async ({ xcoders, x, m, query, canvas, styleMessage, errorMessage, waitingMessage, apikeys, host, getMessage, getJson, addHitCommand }) => {
     try {
       const data = await getJson(`${host}/api/anime/kusonime?query=${query}&apikey=${apikeys}`);
       if (!data.status) return errorMessage(m.chat, getMessage(data), 'Kusonime Search');
@@ -21,9 +21,10 @@ export default {
         }
         return results;
       }).join('\n\n');
-      const caption = styleMessage('Kusonime Search Result', result);
+      const caption = styleMessage(null, result);
+      const images = await canvas.create(`Kusonime Search ${query}`);
       addHitCommand('Kusonime Search', true);
-      return xcoders.sendFileFromUrl(m.chat, data.result[0].thumbnail, caption, x);
+      return xcoders.sendMessage(m.chat, { image: images, caption: caption.trim() }, { quoted: x });
     } catch (error) {
       return errorMessage(m.chat, error, 'Kusonime Search');
     }

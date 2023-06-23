@@ -6,19 +6,20 @@ export default {
     description: 'Get Surah Al`Qur-an and audio',
     query: true,
     usage: '%cmd% 1|5',
-    execute: async ({ xcoders, m, x, errorMessage, waitingMessage, replyMessage, query, host, getJson, apikeys, parseResult, styleMessage, addHitCommand }) => {
+    execute: async ({ xcoders, m, x, errorMessage, waitingMessage, canvas, query, host, getJson, apikeys, parseResult, styleMessage, addHitCommand }) => {
         try {
             const [surah, ayat] = query.split('|');
             const data = await getJson(`${host}/api/religion/quran?surah=${surah}&ayat=${ayat}&apikey=${apikeys}`);
-            if (!data.status) return errorMessage(m.chat, getMessage(data), 'Al`Qur-an');
+            if (!data.status) return errorMessage(m.chat, getMessage(data), "Al'Qur-an");
             await waitingMessage(m.chat);
             const result = parseResult(data.result);
-            const caption = styleMessage('Al`Qur-an', result);
-            addHitCommand('Al`Qur-an', true);
+            const caption = styleMessage(null, result);
+            const images = await canvas.create(`Al'Qur-an Surah ${surah} Ayat ${ayat}`);
+            addHitCommand("Al'Qur-an", true);
             await xcoders.sendAudioFromUrl(m.chat, data.result.audio, x, { ffmpeg: true, type: 'audio' });
-            return replyMessage(caption);
+            return xcoders.sendMessage(m.chat, { image: images, caption: caption.trim() }, { quoted: x });
         } catch (error) {
-            return errorMessage(m.chat, error, 'Al`Qur-an');
+            return errorMessage(m.chat, error, "Al'Qur-an");
         }
     }
 }

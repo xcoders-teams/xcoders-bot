@@ -15,7 +15,7 @@ export default {
       await waitingMessage(m.chat);
       const result = parseResult(data.result);
       const caption = styleMessage('Tiktok Media Downloader', result);
-      addHitCommand('Tiktok Downoader', true);
+      addHitCommand('Tiktok Downloader', true);
       if (data.result.result_url) {
         for (let { display_image } of data.result.result_url) {
           await xcoders.sendFileFromUrl(m.chat, display_image.url_list[1], caption, x);

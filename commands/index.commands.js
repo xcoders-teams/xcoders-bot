@@ -9,6 +9,8 @@ import moment from 'moment-timezone';
 import child from 'child_process';
 
 import regex from '../configs/regex.js';
+import Canvas from '../library/canvas.js';
+import emojiRegex from '../library/emojiRegex.js';
 import hitCommands from '../library/hitCommand.js';
 import similarity from '../library/similarity.js';
 
@@ -61,7 +63,8 @@ export default async (xcoders, x, m, functions) => {
       await xcoders.sendMessage(m.chat, { text, contextInfo: { forwardingScore: 999, isForwarded: true } }, { quoted: x });
     };
     const styleMessage = (title, string) => {
-      return `\r \r \r『 ${title} 』\n\n${string.replace(/•/g, '*❑').replace(/: /g, ':* ')}\n\n${watermark}`;
+      const content = string.replace(/•/g, '*᛭').replace(/: /g, ':* ');
+      return title ? `\r \r \r \r \r ⋞ ${'```' + title + '```'} ⋟\n\n${content}\n\n${watermark}` : `\n\n${content}\n\n${watermark}`;
     };
 
     if (isCommand) console.log(chalk.bgBlack.red.italic.bold(getCurrentTime), chalk.bold.italic.green(`[ EXEC ${command.toUpperCase()} ]`), chalk.italic.greenBright.bold('From'), chalk.bold.italic.yellow(senderName), m.isGroups ? chalk.italic.bold.greenBright('in ') + chalk.italic.bold.yellow(metadataGroups.subject) : '');
@@ -147,7 +150,7 @@ export default async (xcoders, x, m, functions) => {
         if (Functions.media && !mimetype) return replyMessage('Reply atau kirim media image atau video untuk meneruskan command tersebut.', 'info');
         if (!allCommands.includes(command)) allCommands.push(command);
         const tools = { command, xcoders, m, x, prefix, owners, senderName, thumbnail, waitingMessage, query, replyMessage, styleMessage, invalidUrlMessage, errorMessage, response, isCreators, isBotAdminsGroups, isAdminsGroups, getParticipants, metadataGroups, apikeys, mimetype, quoted, regex, delay, host };
-        return Functions.execute(Object.assign(tools, { ...functions, addHitCommand: hitCommands.addHitCommand }));
+        return Functions.execute(Object.assign(tools, { ...functions, emojiRegex, canvas: Canvas, addHitCommand: hitCommands.addHitCommand }));
       }
     }
 

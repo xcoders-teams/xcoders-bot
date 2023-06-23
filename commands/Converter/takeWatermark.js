@@ -2,7 +2,7 @@
 
 export default {
     views: ['take < author|pack >'], // view for message in  menu
-    command: /^take$/i, //another command.
+    command: /^(take|wm)$/i, //another command.
     description: 'Create Watermark in sticker message',
     usage: '%cmd% watermark',
     media: true,
