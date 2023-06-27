@@ -12,7 +12,8 @@ class Similarity {
         commonChars++;
       }
     }
-    return (commonChars / maxLength) * 100;
+    const result = (commonChars / maxLength) * 100;
+    return parseFloat(result);
   }
 
   calculateSimilarityScoreTwo(inputOne, inputTwo) {
@@ -45,12 +46,13 @@ class Similarity {
     return parseFloat(serializeScore);
   }
 
-  exec(array, keyword, similarity) {
+  matched(array, keyword, similarity) {
     const matches = [];
     for (const item of array) {
       const name = item.toLowerCase();
       const checkScoreOne = this.calculateSimilarityScoreOne(name, keyword.toLowerCase());
       const checkScoreTwo = this.calculateSimilarityScoreTwo(name, keyword.toLowerCase());
+
       if (checkScoreOne >= similarity || name.includes(keyword.toLowerCase())) {
         const score = checkScoreOne.toString() === '100' ? checkScoreOne : checkScoreOne.toFixed(2);
         matches.push({ index: name, score });
@@ -60,6 +62,24 @@ class Similarity {
       }
     }
     return matches;
+  }
+
+  exec(array, string, score) {
+    const result = [];
+    for (let i = 0; i < array.length; i++) {
+      const currentString = array[i];
+      let matchCount = 0;
+      for (let index = 0; index < currentString.length; index++) {
+        if (string.includes(currentString[index])) {
+          matchCount++;
+        }
+      }
+      const similarityScore = (matchCount / currentString.length) * 100;
+      if (similarityScore >= score && similarityScore != 100) {
+        result.push({ index: currentString, score: similarityScore });
+      }
+    }
+    return result;
   }
 }
 export default new Similarity();

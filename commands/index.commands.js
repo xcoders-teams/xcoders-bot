@@ -63,7 +63,7 @@ export default async (xcoders, x, m) => {
       await xcoders.sendMessage(m.chat, { text, contextInfo: { forwardingScore: 9999999, isForwarded: true } }, { quoted: x });
     };
     const styleMessage = (title, string) => {
-      const content = string.replace(/•/g, '*᛭').replace(/: /g, ':* ');
+      const content = string.replaceAll(': •', '').replace(/•/g, '*᛭').replace(/: /g, ':* ');
       return (title ? `\r \r \r \r \r ⋞ ${'```' + title + '```'} ⋟\n\n${content}\n\n${watermark}` : `\n\n${content}\n\n${watermark}`).trim();
     };
 
@@ -154,12 +154,12 @@ export default async (xcoders, x, m) => {
       }
     }
 
-    const checkCommand = Similarity.exec(allCommands, command);
+    const checkCommand = Similarity.exec(allCommands, command, 65);
     if (!checkCommand || checkCommand.length === 0) {
       return replyMessage('*_perintah tidak ada yang cocok, coba periksa kembali command anda!_*', 'error');
     } else {
       const resultCommand = checkCommand.map((obj) => {
-        return `➠ *${prefix + obj.index}* *[ ${obj.score}% ]*\n`;
+        return `➠ *${prefix + obj.index} ⋞ ${obj.score.toFixed(2)}% ⋟*\n`;
       }).join('');
       return replyMessage('```Mungkin command yang anda maksud adalah:\n\n```' + resultCommand, 'info');
     }

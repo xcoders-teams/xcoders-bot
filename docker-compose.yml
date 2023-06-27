@@ -1,6 +1,6 @@
 version: "3.9" 
 services:
-  titid:
+  bot:
     build: .
     ports:
-      - "8080:8080"
+      - "8008:8080"
