@@ -13,7 +13,7 @@ export default {
             if (!/webp/i.test(mimetype)) return errorMessage(m.chat, 'Type not supported');
             const result = await createWatermark(buffer, { packname: pack, authorname: author });
             addHitCommand('Sticker', true);
-            return xcoders.sendMessage(m.chat, { sticker: result }, { quoted: x });
+            return xcoders.sendMessage(m.chat, { sticker: result, contextInfo: { forwardingScore: 9999999, isForwarded: true } }, { quoted: x });
         } catch (error) {
             return errorMessage(m.chat, error, 'Sticker');
         }

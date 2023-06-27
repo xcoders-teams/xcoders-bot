@@ -19,7 +19,7 @@ export default {
       const caption = styleMessage(null, result);
       const images = await canvas.create(`Kisah Nabi ${query}`);
       addHitCommand('Kisah Nabi', true);
-      return xcoders.sendMessage(m.chat, { image: images, caption: caption.trim() }, { quoted: x });
+      return xcoders.sendMessage(m.chat, { image: images, caption: caption.trim(), contextInfo: { forwardingScore: 9999999, isForwarded: true } }, { quoted: x });
     } catch (error) {
       return errorMessage(m.chat, error, 'Kisah Nabi');
     }

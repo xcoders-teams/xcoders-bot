@@ -35,7 +35,7 @@ const html = (input, title) => `<!DOCTYPE html>
     <br>
     <img src="${input}" alt="Scan">
   </div>
-</body>
+</body> 
 </html>
 `;
 

@@ -24,7 +24,7 @@ export default {
       const caption = styleMessage(null, result);
       const images = await canvas.create(`Tafsir Al'Qur-an ${query}`);
       addHitCommand("Tafsir Al'Qur-an", true);
-      return xcoders.sendMessage(m.chat, { image: images, caption: caption.trim() }, { quoted: x });
+      return xcoders.sendMessage(m.chat, { image: images, caption: caption.trim(), contextInfo: { forwardingScore: 9999999, isForwarded: true } }, { quoted: x });
     } catch (error) {
       return errorMessage(m.chat, error, "Tafsir Al'Qur-an");
     }

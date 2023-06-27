@@ -14,7 +14,8 @@ const interline = (str) => '_' + str + '_';
 
 const allmenu = (m, prefix, name, rest) => {
   const listFeatures = functions.requireJson('./database/commands.json');
-  const { size } = fs.lstatSync('./session');
+  const pathFolder = './session';
+  const { size } = process.platform !== 'android' ? functions.folderSize(pathFolder) : fs.lstatSync(pathFolder);
   if (Object.keys(listFeatures).length < 1) {
     return loadedCommands(functions);
   }

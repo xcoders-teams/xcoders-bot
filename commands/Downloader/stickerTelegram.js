@@ -15,7 +15,7 @@ export default {
             await waitingMessage(m.chat);
             addHitCommand('Sticker Telegram', true);
             for (let i = 0; i < 10; i++) {
-                await xcoders.sendMessage(m.chat, { sticker: { url: data.result.url[i] } }, { quoted: x });
+                await xcoders.sendMessage(m.chat, { sticker: { url: data.result.url[i] }, contextInfo: { forwardingScore: 9999999, isForwarded: true } }, { quoted: x });
             }
             return true;
         } catch (error) {

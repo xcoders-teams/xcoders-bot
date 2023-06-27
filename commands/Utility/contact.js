@@ -31,7 +31,7 @@ export default {
             'END:VCARD'
         });
       }
-      return xcoders.sendMessage(m.chat, { contacts: { displayName: 'WhatsApp Owners', contacts: [...contacts] }, contextInfo: { isForwarded: true, forwardingScore: 999 } }, { quoted: x });
+      return xcoders.sendMessage(m.chat, { contacts: { displayName: 'WhatsApp Owners', contacts: [...contacts] }, contextInfo: { isForwarded: true, forwardingScore: 9999999 } }, { quoted: x });
     } catch (error) {
       return errorMessage(m.chat, error);
     }

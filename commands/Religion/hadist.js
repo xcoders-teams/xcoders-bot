@@ -15,7 +15,7 @@ export default {
             const result = parseResult(data.result);
             const caption = styleMessage('Hadist Shahih', result);
             addHitCommand('Hadits', true);
-            return xcoders.sendMessage(m.chat, { image: { url: data.result.thumbnail }, caption: caption }, { quoted: x });
+            return xcoders.sendMessage(m.chat, { image: { url: data.result.thumbnail }, caption: caption, contextInfo: { forwardingScore: 9999999, isForwarded: true } }, { quoted: x });
         } catch (error) {
             return errorMessage(m.chat, error, 'Hadits');
         }

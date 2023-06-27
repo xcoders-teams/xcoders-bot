@@ -1,10 +1,10 @@
 // External modules
 import Baileys from '@whiskeysockets/baileys';
+import https from 'https';
 import fs from 'fs';
 import pino from 'pino';
 import chalk from 'chalk';
 import ffmpeg from 'fluent-ffmpeg';
-import { fileURLToPath } from 'url';
 
 const {
   default: makeWASocket,
@@ -52,6 +52,11 @@ async function starting() {
     generateHighQualityLinkPreview: true,
     printQRInTerminal: true,
     markOnlineOnConnect: false,
+    options: {
+      httpsAgent: new https.Agent({
+        rejectUnauthorized: false
+      })
+    },
     patchMessageBeforeSending: (message) => {
       const requiresPatch = !!(message.buttonsMessage || message.templateMessage || message.listMessage);
       if (requiresPatch) message = { viewOnceMessage: { message: { messageContextInfo: { deviceListMetadataVersion: 2, deviceListMetadata: {} }, ...message } } };
@@ -113,7 +118,7 @@ async function starting() {
           await xcoders.readMessages([message.key]);
         }
       }
-      await pluginsCommand(xcoders, x, m, functions);
+      await pluginsCommand(xcoders, x, m);
     } catch (error) {
       throw error;
     }
@@ -148,7 +153,7 @@ async function starting() {
     const mimetype = getDevice(quoted.id) == 'ios' ? 'audio/mpeg' : 'audio/mp4';
     const type = options.type !== 'audio' ? 'documentMessage' : 'audioMessage';
     const option = options.type !== 'audio' ? { externalAdReply: { title: options.title || options.fileName, body: options.body || `${global.packname} ${global.authorname}`, mediaType: 1, renderLargerThumbnail: true, showAdAttribution: true, thumbnail: options.thumbnail || global.icon, sourceUrl: options.source || global.host, mediaUrl: options.source || global.host } } : {};
-    const prepareMessage = (buffer) => prepareWAMessageMedia({ [options.type || 'document']: buffer, mimetype, fileName: options.fileName || functions.getRandom('.mp3'), contextInfo: { ...option, forwardingScore: 999, isForwarded: true } }, { upload: xcoders.waUploadToServer, });
+    const prepareMessage = (buffer) => prepareWAMessageMedia({ [options.type || 'document']: buffer, mimetype, fileName: options.fileName || functions.getRandom('.mp3'), contextInfo: { ...option, forwardingScore: 9999999, isForwarded: true } }, { upload: xcoders.waUploadToServer, });
     if (!options.ffmpeg) {
       const result = await functions.getBuffer(url);
       await delay(1000);
@@ -204,7 +209,7 @@ async function starting() {
   return xcoders;
 }
 
-const files = fileURLToPath(import.meta.url);
+const files = global.absoluteUrl(import.meta.url);
 fs.watchFile(files, () => {
   fs.unwatchFile(files);
   console.log(chalk.redBright('Update index.js'));

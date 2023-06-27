@@ -1,3 +1,4 @@
+import '../configs/global.js';
 import fs from 'fs';
 import jimp from 'jimp';
 import path from 'path';
@@ -10,7 +11,6 @@ import fetch from 'node-fetch';
 import webpmux from 'node-webpmux';
 import Module from 'module';
 import _ from 'lodash';
-import url from 'url';
 import { exec as childExec } from 'child_process';
 import ffmpeg from 'fluent-ffmpeg';
 import Baileys from '@whiskeysockets/baileys';
@@ -275,8 +275,13 @@ async function xcodersDownloadContentMediaMessage(message, options = {}) {
   const stream = await Baileys.downloadContentFromMessage(message, messageType);
   const buffers = await Baileys.toBuffer(stream);
   if (!options.optional) return buffers;
-  const image = await jimp.read(buffers);
-  return image.getBufferAsync(jimp.MIME_PNG);
+  const inputFile = path.join(process.cwd(), 'temp', xcodersGetRandom('.webp'));
+  const outputFile = path.join(process.cwd(), 'temp', xcodersGetRandom('.jpg'));
+  await fs.promises.writeFile(inputFile, buffers);
+  const result = await new Promise((resolve, reject) => ffmpeg(inputFile).output(outputFile).on('end', () => resolve(fs.readFileSync(outputFile))).on('error', reject).run());
+  if (fs.existsSync(outputFile)) fs.unlinkSync(outputFile);
+  if (fs.unlinkSync(inputFile)) fs.unlinkSync(inputFile);
+  return result;
 }
 
 function xcodersCreateShortData(url, ...args) {
@@ -288,7 +293,7 @@ function xcodersCreateShortData(url, ...args) {
   return data;
 }
 
-function xcodersFormatSize(bytes, si = true, dp = 1) {
+function xcodersFormatSize(bytes, si = true) {
   const thresh = si ? 1000 : 1024;
   if (Math.abs(bytes) < thresh) return bytes + ' B';
   const units = si ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'] : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
@@ -297,13 +302,28 @@ function xcodersFormatSize(bytes, si = true, dp = 1) {
     bytes /= thresh;
     ++u;
   }
-  return bytes.toFixed(dp) + ' ' + units[u];
+  return bytes.toFixed(1) + ' ' + units[u];
 }
 
 function xcodersReloadModule(modulePath) {
   const require = Module.createRequire(import.meta.url);
   const fullPath = path.resolve(modulePath);
   delete require.cache[fullPath];
+}
+
+function xcodersFolderSize(folderPath) {
+  let totalSize = 0;
+  const files = fs.readdirSync(folderPath);
+  files.forEach((file) => {
+    const filePath = path.join(folderPath, file);
+    const stats = fs.statSync(filePath);
+    if (stats.isFile()) {
+      totalSize += stats.size;
+    } else if (stats.isDirectory()) {
+      totalSize += getFolderSize(filePath);
+    }
+  });
+  return { size: totalSize };
 }
 
 async function xcodersCreateStickerImage(media, options = {}, nameExif = './temp/data.exif') {
@@ -314,9 +334,9 @@ async function xcodersCreateStickerImage(media, options = {}, nameExif = './temp
     await fs.promises.writeFile(tmpFileIn, media);
     if (options.packname || options.authorname) {
       nameExif = './temp/' + xcodersGetRandom('.exif');
-      await createExif(options.packname, options.authorname, nameExif);
+      createExif(options.packname, options.authorname, nameExif);
     }
-    if (!fs.existsSync(nameExif)) await createExif(global.packname, global.authorname, nameExif);
+    if (!fs.existsSync(nameExif)) createExif(global.packname, global.authorname, nameExif);
     await new Promise((resolve, reject) => {
       ffmpeg(tmpFileIn)
         .on('error', reject)
@@ -351,7 +371,7 @@ async function xcodersCreateSticker(media, options = {}) {
     await fs.promises.writeFile(tmpFileIn, media);
     const image = new webpmux.Image();
     const pathExif = './temp/' + xcodersGetRandom('.exif');
-    await createExif(options.packname, options.authorname, pathExif);
+    createExif(options.packname, options.authorname, pathExif);
     const exif = await fs.promises.readFile(pathExif);
     if (fs.existsSync(pathExif)) await fs.promises.unlink(pathExif);
     await image.load(tmpFileIn);
@@ -376,9 +396,9 @@ async function xcodersCreateStickerVIdeo(media, options = {}, nameExif = './temp
     await fs.promises.writeFile(tmpFileIn, media);
     if (options.packname || options.authorname) {
       nameExif = './temp/' + xcodersGetRandom('.exif');
-      await createExif(options.packname, options.authorname, nameExif);
+      createExif(options.packname, options.authorname, nameExif);
     }
-    if (!fs.existsSync(nameExif)) await createExif(global.packname, global.authorname, nameExif);
+    if (!fs.existsSync(nameExif)) createExif(global.packname, global.authorname, nameExif);
     await new Promise((resolve, reject) => {
       ffmpeg(tmpFileIn)
         .on('error', reject)
@@ -405,6 +425,30 @@ async function xcodersCreateStickerVIdeo(media, options = {}, nameExif = './temp
     throw error;
   }
 }
+async function xcodersConvertToMp3(data) {
+  try {
+    const inputPath = path.join(process.cwd(), 'temp', `video_${crypto.randomBytes(3).toString('hex')}.mp4`);
+    const output = path.join(process.cwd(), 'temp', `${crypto.randomBytes(3).toString('hex')}.mp3`);
+    fs.writeFileSync(inputPath, data);
+    const file = await new Promise((resolve, reject) => {
+      ffmpeg(inputPath)
+        .audioFrequency(44100)
+        .audioChannels(2)
+        .audioBitrate('128k')
+        .audioCodec('libmp3lame')
+        .audioQuality(5)
+        .toFormat('mp3')
+        .save(output)
+        .on('error', reject)
+        .on('end', () => resolve(fs.readFileSync(output)));
+    });
+    if (fs.existsSync(output)) fs.unlinkSync(output);
+    if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
+    return file;
+  } catch (error) {
+    throw error;
+  }
+};
 
 function reactEmoji() {
   const emojiList = {
@@ -420,7 +464,7 @@ function reactEmoji() {
   return emojiList[randomEmoji];
 }
 
-async function createExif(packname, authorname, pathname) {
+function createExif(packname, authorname, pathname) {
   if (fs.existsSync(pathname)) return true;
   const pack = {
     'sticker-pack-id': 'com.snowcorp.stickerly.android.stickercontentprovider b5e7275f-f1de-4137-961f-57becfad34f2',
@@ -434,13 +478,15 @@ async function createExif(packname, authorname, pathname) {
   const jsonBuffer = Buffer.from(JSON.stringify(pack), 'utf-8');
   const exif = Buffer.concat([exifAttr, jsonBuffer]);
   exif.writeUIntLE(jsonBuffer.length, 14, 4);
-  await fs.writeFile(pathname, exif, (error) => {
+  fs.writeFile(pathname, exif, (error) => {
     if (error) throw error;
     console.log('Success!');
   });
   return true;
 }
 
+library.convertToMp3 = xcodersConvertToMp3;
+library.folderSize = xcodersFolderSize;
 library.createWatermark = xcodersCreateSticker;
 library.stickerVideo = xcodersCreateStickerVIdeo;
 library.stickerImage = xcodersCreateStickerImage;
@@ -463,7 +509,7 @@ library.getMessage = xcodersLastKeysObject;
 
 export default library;
 
-const files = url.fileURLToPath(import.meta.url);
+const files = global.absoluteUrl(import.meta.url);
 fs.watchFile(files, () => {
   fs.unwatchFile(files);
   logger.info('Update functions.js');

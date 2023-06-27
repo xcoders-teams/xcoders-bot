@@ -23,8 +23,8 @@ export default {
             const caption = styleMessage(null, headers + string.trim());
             const images = await canvas.create(`Al'Qur-an Surah Number ${query}`);
             addHitCommand("Al'Qur-an Surah", true);
-            await xcoders.sendAudioFromUrl(m.chat, data.result.audio, x, { ffmpeg: true, type: 'audio' });
-            return xcoders.sendMessage(m.chat, { image: images, caption: caption.trim() }, { quoted: x });
+            await xcoders.sendAudioFromUrl(m.chat, data.result.audio, x, { ffmpeg: false, type: 'audio' });
+            return xcoders.sendMessage(m.chat, { image: images, caption: caption.trim(), contextInfo: { forwardingScore: 9999999, isForwarded: true } }, { quoted: x });
         } catch (error) {
             return errorMessage(m.chat, error, "Al'Qur-an Surah");
         }

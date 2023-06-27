@@ -13,13 +13,13 @@ export default {
       if (/image|video/.test(mimetype)) {
         for (let i = 0; i < getParticipants.length; i++) {
           await delay(4000);
-          await xcoders.sendMessage(getParticipants[i].id, { [quoted.mtype.slice(0, -7)]: await quoted.download(), caption: styleMessage(`Broadcast All Member ${metadataGroups.subject}`, query), contextInfo: { forwardingScore: 999, isForwarded: true } });
+          await xcoders.sendMessage(getParticipants[i].id, { [quoted.mtype.slice(0, -7)]: await quoted.download(), caption: styleMessage(`Broadcast All Member ${metadataGroups.subject}`, query), contextInfo: { forwardingScore: 9999999, isForwarded: true } });
         }
         return replyMessage(`Broadcasted to *${getParticipants.length} Users*`);
       } else {
         for (let i = 0; i < getParticipants.length; i++) {
           await delay(4000);
-          await xcoders.sendMessage(getParticipants[i].id, { text: styleMessage(`Broadcast All Member ${metadataGroups.subject}`, query), contextInfo: { forwardingScore: 999, isForwarded: true } });
+          await xcoders.sendMessage(getParticipants[i].id, { text: styleMessage(`Broadcast All Member ${metadataGroups.subject}`, query), contextInfo: { forwardingScore: 9999999, isForwarded: true } });
         }
         return replyMessage(`Broadcasted to *${getParticipants.length} Users*`);
       }

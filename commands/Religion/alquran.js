@@ -17,7 +17,7 @@ export default {
             const images = await canvas.create(`Al'Qur-an Surah ${surah} Ayat ${ayat}`);
             addHitCommand("Al'Qur-an", true);
             await xcoders.sendAudioFromUrl(m.chat, data.result.audio, x, { ffmpeg: true, type: 'audio' });
-            return xcoders.sendMessage(m.chat, { image: images, caption: caption.trim() }, { quoted: x });
+            return xcoders.sendMessage(m.chat, { image: images, caption: caption.trim(), contextInfo: { forwardingScore: 9999999, isForwarded: true } }, { quoted: x });
         } catch (error) {
             return errorMessage(m.chat, error, "Al'Qur-an");
         }

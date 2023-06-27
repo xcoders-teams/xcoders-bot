@@ -3,12 +3,21 @@ import path from 'path';
 import chalk from 'chalk';
 import axios from 'axios';
 import cheerio from 'cheerio';
+import { platform } from 'process';
 import { fileURLToPath } from 'url';
 import yargs from 'yargs/yargs';
 
 global.restApi = ['https://api-xcoders.site', 'https://api-fxc7.cloud.okteto.net'];
 global.ownerNumber = ['6285956396417@s.whatsapp.net'];
 global.yargs = new Object(yargs(process.argv.slice(2)).exitProcess(false).parse());
+global.absoluteUrl = (pathFiles) => {
+  if (platform !== 'android') {
+    const filePath = fileURLToPath(pathFiles);
+    return filePath;
+  } else {
+    return fileURLToPath(pathFiles);
+  }
+};
 global.axios = axios;
 global.cheerio = cheerio;
 global.PORT = process.env.PORT || 8000;
@@ -19,7 +28,7 @@ global.nonprefix = false;
 global.public = true;
 global.original = true;
 global.qrcode = null;
-global.watermark = '\n\t_*乂 bot WhatsApp - xcoders team\'s*_';
+global.watermark = "\n\t_*乂 bot WhatsApp - xcoders team's*_";
 global.packname = 'Created By';
 global.authorname = 'xcoders bot';
 global.commander = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'database', 'commands.json')));
@@ -44,7 +53,7 @@ global.response = Object.freeze({
   process: ['*Sek proses...*', '*Sedang Diproses...*', '*Tunggu Sebentar...*', '*Sabar Kak...*', '*Prosess...*']
 });
 
-const files = fileURLToPath(import.meta.url);
+const files = global.absoluteUrl(import.meta.url);
 fs.watchFile(files, () => {
   fs.unwatchFile(files);
   console.log(chalk.redBright('Update global.js'));

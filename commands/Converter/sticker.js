@@ -14,7 +14,7 @@ export default {
       const result = /image/.test(mimetype) ? await stickerImage(buffer, { packname: pack, authorname: author }) : /video/.test(mimetype) ? await stickerVideo(buffer) : null;
       if (!result) return errorMessage(m.chat, 'Error converting this media...', 'Sticker');
       addHitCommand('Sticker', true);
-      return xcoders.sendMessage(m.chat, { sticker: result }, { quoted: x });
+      return xcoders.sendMessage(m.chat, { sticker: result, contextInfo: { forwardingScore: 9999999, isForwarded: true } }, { quoted: x });
     } catch (error) {
       return errorMessage(m.chat, error, 'Sticker');
     }

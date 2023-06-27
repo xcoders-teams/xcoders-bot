@@ -16,7 +16,7 @@ export default {
             const result = Buffer.from(data, 'buffer');
             await waitingMessage(m.chat);
             addHitCommand('Emoji Mix', true);
-            return xcoders.sendMessage(m.chat, { image: result, caption: response.success }, { quoted: x });
+            return xcoders.sendMessage(m.chat, { image: result, caption: response.success, contextInfo: { forwardingScore: 9999999, isForwarded: true } }, { quoted: x });
         } catch (error) {
             return errorMessage(m.chat, error, 'Emoji Mix');
         }

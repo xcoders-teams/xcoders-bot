@@ -15,7 +15,7 @@ export default {
       const caption = styleMessage('Instagram Story Downloader', `• ID: ${data.result.id}\n• Username: ${data.result.username}\n• Fullname: ${data.result.fullname}`);
       addHitCommand('Instagram Story', true);
       for (let { url } of data.result.data) {
-        if (!url) return errorMessage(m.chat, getMessage(data));
+        if (!url) return errorMessage(m.chat, getMessage(data), 'Instagram Story');
         await xcoders.sendFileFromUrl(m.chat, url, caption, x);
       }
     } catch (error) {

@@ -1,6 +1,5 @@
 import '../configs/global.js';
 import Baileys from '@whiskeysockets/baileys';
-import url from 'url';
 import _ from 'lodash';
 import fs from 'fs';
 import chalk from 'chalk';
@@ -12,7 +11,8 @@ import regex from '../configs/regex.js';
 import Canvas from '../library/canvas.js';
 import emojiRegex from '../library/emojiRegex.js';
 import hitCommands from '../library/hitCommand.js';
-import similarity from '../library/similarity.js';
+import Similarity from '../library/similarity.js';
+import functions from '../library/functions.js';
 
 const delay = Baileys.delay;
 const jidNormalizedUser = Baileys.jidNormalizedUser;
@@ -23,7 +23,7 @@ const watermark = global.watermark;
 const thumbnail = global.thumbnail;
 const response = global.response;
 
-export default async (xcoders, x, m, functions) => {
+export default async (xcoders, x, m) => {
   try {
     const prefix = global.multiprefix ? (/^[+!#|÷?%^&./\\©^]/.test(m.body) ? (m.body).substr(0, 1) : '.') : global.nonprefix ? '' : global.prefix;
     const isCommand = m.body?.startsWith(prefix);
@@ -44,27 +44,27 @@ export default async (xcoders, x, m, functions) => {
     const host = original ? restApi[0] : restApi[1];
 
     const waitingMessage = async (jid) => {
-      await xcoders.sendMessage(jid, { text: _.sample(response.process), contextInfo: { forwardingScore: 999, isForwarded: true } }, { quoted: x });
+      await xcoders.sendMessage(jid, { text: _.sample(response.process), contextInfo: { forwardingScore: 9999999, isForwarded: true } }, { quoted: x });
     };
     const errorMessage = async (jid, msg, title) => {
       if (title) hitCommands.addHitCommand(title, false);
       const serializeMessage = msg.message ? msg.message : typeof msg === 'string' ? msg : _.sample(response.error.request);
       await xcoders.sendMessage(m.chat, { react: { text: '❌', key: m.key } });
-      await xcoders.sendMessage(jid, { text: /\*/.test(serializeMessage) ? serializeMessage : `*${serializeMessage}*`, contextInfo: { forwardingScore: 999, isForwarded: true } }, { quoted: x });
+      await xcoders.sendMessage(jid, { text: /\*/.test(serializeMessage) ? serializeMessage : `*${serializeMessage}*`, contextInfo: { forwardingScore: 9999999, isForwarded: true } }, { quoted: x });
       console.error(msg);
     };
     const invalidUrlMessage = async (jid) => {
       await xcoders.sendMessage(m.chat, { react: { text: '❗', key: m.key } });
-      await xcoders.sendMessage(jid, { text: _.sample(response.error.url), contextInfo: { forwardingScore: 999, isForwarded: true } }, { quoted: x });
+      await xcoders.sendMessage(jid, { text: _.sample(response.error.url), contextInfo: { forwardingScore: 9999999, isForwarded: true } }, { quoted: x });
     };
     const replyMessage = async (text, type) => {
       if (type == 'info') await xcoders.sendMessage(m.chat, { react: { text: '❗', key: m.key } });
       if (type == 'error') await xcoders.sendMessage(m.chat, { react: { text: '❌', key: m.key } });
-      await xcoders.sendMessage(m.chat, { text, contextInfo: { forwardingScore: 999, isForwarded: true } }, { quoted: x });
+      await xcoders.sendMessage(m.chat, { text, contextInfo: { forwardingScore: 9999999, isForwarded: true } }, { quoted: x });
     };
     const styleMessage = (title, string) => {
       const content = string.replace(/•/g, '*᛭').replace(/: /g, ':* ');
-      return title ? `\r \r \r \r \r ⋞ ${'```' + title + '```'} ⋟\n\n${content}\n\n${watermark}` : `\n\n${content}\n\n${watermark}`;
+      return (title ? `\r \r \r \r \r ⋞ ${'```' + title + '```'} ⋟\n\n${content}\n\n${watermark}` : `\n\n${content}\n\n${watermark}`).trim();
     };
 
     if (isCommand) console.log(chalk.bgBlack.red.italic.bold(getCurrentTime), chalk.bold.italic.green(`[ EXEC ${command.toUpperCase()} ]`), chalk.italic.greenBright.bold('From'), chalk.bold.italic.yellow(senderName), m.isGroups ? chalk.italic.bold.greenBright('in ') + chalk.italic.bold.yellow(metadataGroups.subject) : '');
@@ -154,25 +154,21 @@ export default async (xcoders, x, m, functions) => {
       }
     }
 
-    const checkCommand = allCommands.map((str) => {
-      let string = '';
-      if (similarity(command, str) >= 0.5) {
-        string = `➠ *${prefix + str}*\n`;
-      }
-      if (!string) return;
-      return string;
-    }).join('');
-    if (!checkCommand) {
+    const checkCommand = Similarity.exec(allCommands, command);
+    if (!checkCommand || checkCommand.length === 0) {
       return replyMessage('*_perintah tidak ada yang cocok, coba periksa kembali command anda!_*', 'error');
     } else {
-      return replyMessage('```Mungkin command yang anda maksud adalah:\n\n```' + checkCommand, 'info');
+      const resultCommand = checkCommand.map((obj) => {
+        return `➠ *${prefix + obj.index}* *[ ${obj.score}% ]*\n`;
+      }).join('');
+      return replyMessage('```Mungkin command yang anda maksud adalah:\n\n```' + resultCommand, 'info');
     }
   } catch (error) {
     console.error(chalk.redBright(`[ ERROR ] ${moment().format('HH:mm:ss')}`), error);
   }
 };
 
-const files = url.fileURLToPath(import.meta.url);
+const files = global.absoluteUrl(import.meta.url);
 fs.watchFile(files, () => {
   fs.unwatchFile(files);
   logger.info('Update index.commands.js');

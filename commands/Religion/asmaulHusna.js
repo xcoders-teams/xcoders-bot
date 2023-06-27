@@ -22,7 +22,7 @@ export default {
             const caption = styleMessage(null, string.trim());
             const images = await canvas.create('Asmaul Husna');
             addHitCommand('Asmaul Husna', true);
-            return xcoders.sendMessage(m.chat, { image: images, caption: caption.trim() }, { quoted: x });
+            return xcoders.sendMessage(m.chat, { image: images, caption: caption.trim(), contextInfo: { forwardingScore: 9999999, isForwarded: true } }, { quoted: x });
         } catch (error) {
             return errorMessage(m.chat, error, 'Asmaul Husna');
         }
