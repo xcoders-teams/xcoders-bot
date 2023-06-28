@@ -7,7 +7,7 @@ export default {
   query: true,
   url: true,
   usage: '%cmd% url soundcloud',
-  execute: async ({ xcoders, x, m, query, styleMessage, invalidUrlMessage, errorMessage, waitingMessage, apikeys, regex, host, getMessage, parseResult, getJson, addHitCommand }) => {
+  execute: async ({ xcoders, x, m, query, styleMessage, invalidUrlMessage, errorMessage, waitingMessage, canvas, apikeys, regex, host, getMessage, parseResult, getJson, getBuffer, addHitCommand }) => {
     try {
       if (!regex.media(query)) return invalidUrlMessage(m.chat);
       const data = await getJson(`${host}/api/download/soundcloud?url=${query}&apikey=${apikeys}`);
@@ -15,8 +15,9 @@ export default {
       await waitingMessage(m.chat);
       const result = parseResult(data.result);
       const caption = styleMessage('SoundCloud Music Downloader', result);
+      const thumbnail = await canvas.create('Sound Cloud Downloader');
       const buffer = await getBuffer(data.result.thumbnail);
-      await xcoders.sendMessage(m.chat, { image: buffer, caption }, { quoted: x });
+      await xcoders.sendMessage(m.chat, { image: thumbnail, caption, contextInfo: { forwardingScore: 9999999, isForwarded: true } }, { quoted: x });
       addHitCommand('Sound Cloud', true);
       return xcoders.sendAudioFromUrl(m.chat, data.result.url, x, { title: data.result.title, fileName: `${data.result.title}.mp3`, thumbnail: buffer, source: query });
     } catch (error) {

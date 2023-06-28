@@ -1,7 +1,7 @@
 'use strict';
 
 class Logger {
-  constructor () {
+  constructor() {
     this.closeByNewLine = false;
     this.useIcons = true;
     this.logsTitle = 'LOGS';
@@ -92,7 +92,7 @@ class Logger {
     const groupTiles = ` ${this.logsTitle}`;
     if (strings.length > 1) {
       const Icons = this.GetColor(forEach, backgrounds);
-      console.group(Icons, (this.useIcons ? icons: '') + groupTiles);
+      console.group(Icons, (this.useIcons ? icons : '') + groupTiles);
       const newLine = this.closeByNewLine;
       this.closeByNewLine = false;
       strings.forEach((items) => {
@@ -103,7 +103,7 @@ class Logger {
       if (newLine) console.log();
     } else {
       this.print(foregrounds, backgrounds, strings.map((item) => {
-        return `${(this.useIcons ? `${icons} `: '')}${item}`;
+        return `${(this.useIcons ? `${icons} ` : '')}${item}`;
       }));
     }
   }
@@ -114,7 +114,7 @@ class Logger {
     const groupTiles = ` ${this.warningsTitle}`;
     if (strings.length > 1) {
       const Icons = this.GetColor(foregrounds, backgrounds);
-      console.group(Icons, (this.useIcons ? icons: '') + groupTiles);
+      console.group(Icons, (this.useIcons ? icons : '') + groupTiles);
       const newLine = this.closeByNewLine;
       this.closeByNewLine = false;
       strings.forEach((item) => {
@@ -125,18 +125,18 @@ class Logger {
       if (newLine) console.log();
     } else {
       this.print(foregrounds, backgrounds, strings.map((item) => {
-        return `${(this.useIcons ? `${icons} `: '')}${item}`;
+        return `${(this.useIcons ? `${icons} ` : '')}${item}`;
       }));
     }
   }
-  error (...strings) {
+  error(...strings) {
     const foregrounds = 'red';
     const backgrounds = '';
     const icons = '\u26D4';
     const groupTiles = ` ${this.errorsTitle}`;
     if (strings.length > 1) {
       const Icons = this.GetColor(foregrounds, backgrounds);
-      console.group(Icons, (this.useIcons ? icons: '') + groupTiles);
+      console.group(Icons, (this.useIcons ? icons : '') + groupTiles);
       const newLine = this.closeByNewLine;
       this.closeByNewLine = false;
       strings.forEach((item) => {
@@ -147,18 +147,18 @@ class Logger {
       if (newLine) console.log();
     } else {
       this.print(foregrounds, backgrounds, strings.map((item) => {
-        return `${(this.useIcons ? `${icons} `: '')}${item}`;
+        return `${(this.useIcons ? `${icons} ` : '')}${item}`;
       }));
     }
   }
-  info (...strings) {
+  info(...strings) {
     const foregrounds = 'blue';
     const backgrounds = '';
     const icons = '\u2139';
     const groupTiles = ` ${this.informationsTitle}`;
     if (strings.length > 1) {
       const Icons = this.GetColor(foregrounds, backgrounds);
-      console.group(Icons, (this.useIcons ? icons: '') + groupTiles);
+      console.group(Icons, (this.useIcons ? icons : '') + groupTiles);
       const newLine = this.closeByNewLine;
       this.closeByNewLine = false;
       strings.forEach((item) => {
@@ -169,7 +169,7 @@ class Logger {
       if (newLine) console.log();
     } else {
       this.print(foregrounds, backgrounds, strings.map((item) => {
-        return `${(this.useIcons ? `${icons} `: '')}${item}`;
+        return `${(this.useIcons ? `${icons} ` : '')}${item}`;
       }));
     }
   }
@@ -180,7 +180,7 @@ class Logger {
     const groupTiles = ` ${this.successesTitle}`;
     if (strings.length > 1) {
       const Icons = this.GetColor(foregrounds, backgrounds);
-      console.group(Icons, (this.useIcons ? icons: '') + groupTiles);
+      console.group(Icons, (this.useIcons ? icons : '') + groupTiles);
       const newLine = this.closeByNewLine;
       this.closeByNewLine = false;
       strings.forEach((item) => {
@@ -191,7 +191,7 @@ class Logger {
       if (newLine) console.log();
     } else {
       this.print(foregrounds, backgrounds, strings.map((item) => {
-        return `${(this.useIcons ? `${icons} `: '')}${item}`;
+        return `${(this.useIcons ? `${icons} ` : '')}${item}`;
       }));
     }
   }
@@ -202,7 +202,7 @@ class Logger {
     const groupTiles = ` ${this.debugsTitle}`;
     if (strings.length > 1) {
       const Icons = this.GetColor(foregrounds, backgrounds);
-      console.group(Icons, (this.useIcons ? icons: '') + groupTiles);
+      console.group(Icons, (this.useIcons ? icons : '') + groupTiles);
       const newLine = this.closeByNewLine;
       this.closeByNewLine = false;
       strings.forEach((item) => {
@@ -213,7 +213,7 @@ class Logger {
       if (newLine) console.log();
     } else {
       this.print(foregrounds, backgrounds, strings.map((item) => {
-        return `${(this.useIcons ? `${icons} `: '')}${item}`;
+        return `${(this.useIcons ? `${icons} ` : '')}${item}`;
       }));
     }
   }
@@ -231,11 +231,11 @@ class Logger {
   assert(...strings) {
     const foregrounds = 'cyan';
     const backgrounds = '';
-    const icons= '\u0021';
+    const icons = '\u0021';
     const groupTiles = ` ${this.assertsTitle}`;
     if (strings.length > 1) {
       const Icons = this.GetColor(foregrounds, backgrounds);
-      console.group(Icons, (this.useIcons ? icons: '') + groupTiles);
+      console.group(Icons, (this.useIcons ? icons : '') + groupTiles);
       const newLine = this.closeByNewLine;
       this.closeByNewLine = false;
       strings.forEach((item) => {
@@ -246,7 +246,7 @@ class Logger {
       if (newLine) console.log();
     } else {
       this.print(foregrounds, backgrounds, strings.map((item) => {
-        return `${(this.useIcons ? `${icons} `: '')}${item}`;
+        return `${(this.useIcons ? `${icons} ` : '')}${item}`;
       }));
     }
   }

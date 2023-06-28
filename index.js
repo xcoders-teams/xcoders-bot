@@ -1,5 +1,4 @@
 // External modules
-import Baileys from '@whiskeysockets/baileys';
 import https from 'https';
 import fs from 'fs';
 import pino from 'pino';
@@ -53,6 +52,9 @@ async function starting() {
     printQRInTerminal: true,
     markOnlineOnConnect: false,
     options: {
+      Headers: {
+        'User-Agent': global.userAgent
+      },
       httpsAgent: new https.Agent({
         rejectUnauthorized: false
       })
@@ -132,6 +134,7 @@ async function starting() {
       const mentionedJid = options.mentionedJid ? options.mentionedJid : [];
       const { result, mimetype, size } = await functions.getBuffer(url, { optional: true });
       const MimeType = options.mimetype || mimetype;
+      
       if (MimeType == 'image/gif' || options.gif) {
         await xcoders.sendMessage(jid, { image: result, caption, mentionedJid, jpegThumbnail: icon, gifPlayback: true, gifAttribution: 1, ...options }, { quoted, upload: xcoders.waUploadToServer, mediaUploadTimeoutMs: 600000 });
       } else if (/video/.test(MimeType)) {

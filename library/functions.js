@@ -17,27 +17,23 @@ import { fileTypeFromBuffer } from 'file-type';
 
 import ParseResult from './parseResult.js';
 
-const exec = util.promisify(childExec);
+const writeFileAsync = fs.promises.writeFile;
+const readFileAsync = fs.promises.readFile;
+const unlinkAsync = fs.promises.unlink;
+const existsAsync = fs.existsSync;
+const execAsync = util.promisify(childExec);
 const database = global.database = new Array();
 const library = new Object();
 
 // library export
 function xcodersLastKeysObject(input) {
-  if (typeof input === 'string') {
-    return input;
-  }
+  if (typeof input === 'string') return input;
   const keys = Object.keys(input);
   const lastKey = keys[keys.length - 1];
   const lastValue = input[lastKey];
-  if (typeof lastValue === 'object') {
-    return lastKeysObject(lastValue);
-  }
-  if (Array.isArray(lastValue)) {
-    return _.sample(response.error.request);
-  }
-  if (!lastValue) {
-    return _.sample(response.error.request);
-  }
+  if (typeof lastValue === 'object') return lastKeysObject(lastValue);
+  if (Array.isArray(lastValue)) return _.sample(response.error.request);
+  if (!lastValue) return _.sample(response.error.request);
   return lastValue;
 }
 
@@ -52,10 +48,19 @@ function xcodersCapitalized(text) {
 }
 
 function xcodersRequireJson(pathFiles) {
-  if (!fs.existsSync(pathFiles)) throw new Error('files not exists.');
+  if (!existsAsync(pathFiles)) throw new Error('files not exists.');
   const readFiles = fs.readFileSync(pathFiles);
   const parseFiles = JSON.parse(readFiles);
   return parseFiles;
+}
+
+function xcodersArrayBufferToBuffer(arrayBuffer) {
+  const buffer = Buffer.alloc(arrayBuffer.byteLength);
+  const view = new Uint8Array(arrayBuffer);
+  for (let i = 0; i < buffer.length; ++i) {
+    buffer[i] = view[i];
+  }
+  return buffer;
 }
 
 function xcodersConvertToPDF(images = [], size = 'A4') {
@@ -69,7 +74,8 @@ function xcodersConvertToPDF(images = [], size = 'A4') {
     for (let image of images) {
       try {
         const data = await fetch(image).then((response) => response.arrayBuffer());
-        document.image(data, 0, 0, { fit: getSize, align: 'center', valign: 'center' });
+        const buffer = xcodersArrayBufferToBuffer(data);
+        document.image(buffer, 0, 0, { fit: getSize, align: 'center', valign: 'center' });
         document.addPage();
       } catch (err) {
         reject(err);
@@ -276,10 +282,10 @@ async function xcodersDownloadContentMediaMessage(message, options = {}) {
   if (!options.optional) return buffers;
   const inputFile = path.join(process.cwd(), 'temp', xcodersGetRandom('.webp'));
   const outputFile = path.join(process.cwd(), 'temp', xcodersGetRandom('.jpg'));
-  await fs.promises.writeFile(inputFile, buffers);
+  await writeFileAsync(inputFile, buffers);
   const result = await new Promise((resolve, reject) => ffmpeg(inputFile).output(outputFile).on('end', () => resolve(fs.readFileSync(outputFile))).on('error', reject).run());
-  if (fs.existsSync(outputFile)) fs.unlinkSync(outputFile);
-  if (fs.unlinkSync(inputFile)) fs.unlinkSync(inputFile);
+  if (existsAsync(outputFile)) await unlinkAsync(outputFile);
+  if (existsAsync(inputFile)) await unlinkAsync(inputFile);
   return result;
 }
 
@@ -325,133 +331,86 @@ function xcodersFolderSize(folderPath) {
   return { size: totalSize };
 }
 
-async function xcodersCreateStickerImage(media, options = {}, nameExif = './temp/data.exif') {
+async function xcodersCreateSticker(media, options = {}, nameExif = './temp/data.exif') {
   const { ext } = await fileTypeFromBuffer(media);
   const tmpFileOut = path.join(process.cwd(), 'temp', xcodersGetRandom('.webp'));
   const tmpFileIn = path.join(process.cwd(), 'temp', xcodersGetRandom(ext));
   try {
-    await fs.promises.writeFile(tmpFileIn, media);
+    await writeFileAsync(tmpFileIn, media);
     if (options.packname || options.authorname) {
       nameExif = './temp/' + xcodersGetRandom('.exif');
-      createExif(options.packname, options.authorname, nameExif);
+      await createExif(options.packname, options.authorname, nameExif);
     }
-    if (!fs.existsSync(nameExif)) createExif(global.packname, global.authorname, nameExif);
-    await new Promise((resolve, reject) => {
-      ffmpeg(tmpFileIn)
-        .on('error', reject)
-        .on('end', async () => {
-          try {
-            const checkWebpmux = await checkPackageWebpmux();
-            if (checkWebpmux) {
-              await exec(`webpmux -set exif ${nameExif} ${tmpFileOut} -o ${tmpFileOut}`);
-              if (!/data\.exif/.test(nameExif)) await fs.promises.unlink(nameExif);
-              resolve(true);
-            }
-            const metadatSticker = await xcodersCreateSticker(tmpFileOut, { exifPath: nameExif });
-            await fs.promises.writeFile(tmpFileOut, metadatSticker);
-            if (!/data\.exif/.test(nameExif)) await fs.promises.unlink(nameExif);
-            resolve(true);
-          } catch (error) {
-            if (fs.existsSync(tmpFileOut)) await fs.promises.unlink(tmpFileOut);
-            if (!/data\.exif/.test(nameExif)) await fs.promises.unlink(nameExif);
-            reject(error);
+    const processedSticker = await new Promise((resolve, reject) => ffmpeg(tmpFileIn).on('error', reject)
+      .on('end', async () => {
+        try {
+          if (!existsAsync(nameExif)) await createExif(global.packname, global.authorname, nameExif);
+          const checkWebpmux = await checkPackageWebpmux();
+          if (checkWebpmux) {
+            await execAsync(`webpmux -set exif ${nameExif} ${tmpFileOut} -o ${tmpFileOut}`);
+            if (!/data\.exif/.test(nameExif) && existsAsync(nameExif)) await unlinkAsync(nameExif);
+            return resolve(true);
           }
-        })
-        .addOutputOptions(["-vcodec", "libwebp", "-vf", "scale='min(320,iw)':min'(320,ih)':force_original_aspect_ratio=decrease,fps=15, pad=320:320:-1:-1:color=white@0.0, split [a][b]; [a] palettegen=reserve_transparent=on:transparency_color=ffffff [p]; [b][p] paletteuse"])
-        .toFormat('webp')
-        .save(tmpFileOut);
-    });
-    const buffer = await fs.promises.readFile(tmpFileOut);
-    fs.unlinkSync(tmpFileOut);
-    fs.unlinkSync(tmpFileIn);
+          const metadatSticker = await xcodersCreateSticker(tmpFileOut, { exifPath: nameExif });
+          await writeFileAsync(tmpFileOut, metadatSticker);
+          if (!/data\.exif/.test(nameExif) && existsAsync(nameExif)) await unlinkAsync(nameExif);
+          return resolve(true);
+        } catch (error) {
+          if (existsAsync(tmpFileOut)) await unlinkAsync(tmpFileOut);
+          if (!/data\.exif/.test(nameExif) && existsAsync(nameExif)) await unlinkAsync(nameExif);
+          reject(error);
+        }
+      }).addOutputOptions(['-vcodec', 'libwebp', '-vf', "scale='min(320,iw)':min'(320,ih)':force_original_aspect_ratio=decrease,fps=15, pad=320:320:-1:-1:color=white@0.0, split [a][b]; [a] palettegen=reserve_transparent=on:transparency_color=ffffff [p]; [b][p] paletteuse"]).toFormat('webp').save(tmpFileOut)
+    );
+    if (!processedSticker) throw new Error(processedSticker);
+    const buffer = await readFileAsync(tmpFileOut);
+    await unlinkAsync(tmpFileOut);
+    await unlinkAsync(tmpFileIn);
     return buffer;
   } catch (error) {
-    if (fs.existsSync(tmpFileIn)) await fs.promises.unlink(tmpFileIn);
+    if (existsAsync(tmpFileIn)) {
+      await unlinkAsync(tmpFileIn);
+    }
     throw error;
   }
 }
 
-async function xcodersCreateSticker(media, options = {}) {
+async function xcodersCreateWatermark(media, options = {}) {
   const tmpFileOut = path.join(process.cwd(), 'temp', xcodersGetRandom('.webp'));
   const tmpFileIn = path.join(process.cwd(), 'temp', xcodersGetRandom('.webp'));
   try {
-    media = Buffer.isBuffer(media) ? media : fs.existsSync(media) ? fs.readFileSync(media) : null;
+    media = Buffer.isBuffer(media) ? media : existsAsync(media) ? await readFileAsync(media) : null;
     const { ext } = await fileTypeFromBuffer(media);
     if (ext !== 'webp') throw new Error(`error create exif with ext: ${ext}`);
-    await fs.promises.writeFile(tmpFileIn, media);
+    await writeFileAsync(tmpFileIn, media);
     const image = new webpmux.Image();
     await image.load(tmpFileIn);
-    if (!options.exifPath) {
+    if (!options.exifPath || options.packname || options.authorname) {
       const pathExif = path.join(process.cwd(), 'temp', xcodersGetRandom('.exif'));
-      createExif(options.packname, options.authorname, pathExif);
-      options.exifPath = pathExif;
-      if (fs.existsSync(pathExif)) await fs.promises.unlink(pathExif);
+      await createExif(options.packname, options.authorname, pathExif);
+      options.exifPath = await readFileAsync(pathExif);
+      if (existsAsync(pathExif)) await unlinkAsync(pathExif);
     } else {
-      options.exifPath = options.exifPath;
+      options.exifPath = await readFileAsync(options.exifPath);
     }
-    image.exif = fs.existsSync(options.exifPath) ? fs.readFileSync(options.exifPath) : null;
+    image.exif = Buffer.isBuffer(options.exifPath) ? options.exifPath : await readFileAsync('./temp/data.exif');
     await image.save(tmpFileOut);
-    const buffer = await fs.promises.readFile(tmpFileOut);
-    if (fs.existsSync(tmpFileIn)) await fs.promises.unlink(tmpFileIn);
-    if (fs.existsSync(tmpFileOut)) await fs.promises.unlink(tmpFileOut);
+    const buffer = await readFileAsync(tmpFileOut);
+    if (existsAsync(tmpFileIn)) await unlinkAsync(tmpFileIn);
+    if (existsAsync(tmpFileOut)) await unlinkAsync(tmpFileOut);
     return buffer;
   } catch (error) {
-    if (fs.existsSync(tmpFileIn)) await fs.promises.unlink(tmpFileIn);
-    if (fs.existsSync(tmpFileOut)) await fs.promises.unlink(tmpFileOut);
+    if (existsAsync(tmpFileIn)) await unlinkAsync(tmpFileIn);
+    if (existsAsync(tmpFileOut)) await unlinkAsync(tmpFileOut);
     throw error;
   }
 }
 
-async function xcodersCreateStickerVIdeo(media, options = {}, nameExif = './temp/data.exif') {
-  const { ext } = await fileTypeFromBuffer(media);
-  const tmpFileOut = path.join(process.cwd(), 'temp', xcodersGetRandom('.webp'));
-  const tmpFileIn = path.join(process.cwd(), 'temp', xcodersGetRandom(ext));
-  try {
-    await fs.promises.writeFile(tmpFileIn, media);
-    if (options.packname || options.authorname) {
-      nameExif = './temp/' + xcodersGetRandom('.exif');
-      createExif(options.packname, options.authorname, nameExif);
-    }
-    if (!fs.existsSync(nameExif)) createExif(global.packname, global.authorname, nameExif);
-    await new Promise((resolve, reject) => {
-      ffmpeg(tmpFileIn)
-        .on('error', reject)
-        .on('end', async () => {
-          try {
-            const checkWebpmux = await checkPackageWebpmux();
-            if (checkWebpmux) {
-              await exec(`webpmux -set exif ${nameExif} ${tmpFileOut} -o ${tmpFileOut}`);
-              if (!/data\.exif/.test(nameExif)) await fs.promises.unlink(nameExif);
-              resolve(true);
-            }
-            const metadatSticker = await xcodersCreateSticker(tmpFileOut, { exifPath: nameExif });
-            await fs.promises.writeFile(tmpFileOut, metadatSticker);
-            if (!/data\.exif/.test(nameExif)) await fs.promises.unlink(nameExif);
-            resolve(true);
-          } catch (error) {
-            if (fs.existsSync(tmpFileOut)) await fs.promises.unlink(tmpFileOut);
-            if (!/data\.exif/.test(nameExif)) await fs.promises.unlink(nameExif);
-            reject(error);
-          }
-        })
-        .addOutputOptions([`-vcodec`, `libwebp`, `-vf`, `scale='min(320,iw)':min'(320,ih)':force_original_aspect_ratio=decrease,fps=15, pad=320:320:-1:-1:color=white@0.0, split [a][b]; [a] palettegen=reserve_transparent=on:transparency_color=ffffff [p]; [b][p] paletteuse`])
-        .toFormat('webp')
-        .save(tmpFileOut);
-    });
-    const buffer = await fs.promises.readFile(tmpFileOut);
-    fs.unlinkSync(tmpFileOut);
-    fs.unlinkSync(tmpFileIn);
-    return buffer;
-  } catch (error) {
-    if (fs.existsSync(tmpFileIn)) await fs.promises.unlink(tmpFileIn);
-    throw error;
-  }
-}
 async function xcodersConvertToMp3(data) {
   try {
     const inputPath = path.join(process.cwd(), 'temp', `video_${crypto.randomBytes(3).toString('hex')}.mp4`);
     const output = path.join(process.cwd(), 'temp', `${crypto.randomBytes(3).toString('hex')}.mp3`);
-    fs.writeFileSync(inputPath, data);
+    await writeFileAsync(inputPath, data);
     const file = await new Promise((resolve, reject) => {
       ffmpeg(inputPath)
         .audioFrequency(44100)
@@ -464,8 +423,8 @@ async function xcodersConvertToMp3(data) {
         .on('error', reject)
         .on('end', () => resolve(fs.readFileSync(output)));
     });
-    if (fs.existsSync(output)) fs.unlinkSync(output);
-    if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
+    if (existsAsync(output)) await unlinkAsync(output);
+    if (existsAsync(inputPath)) await unlinkAsync(inputPath);
     return file;
   } catch (error) {
     throw error;
@@ -499,8 +458,8 @@ async function checkPackageWebpmux() {
   }
 }
 
-function createExif(packname, authorname, pathname) {
-  if (fs.existsSync(pathname)) return true;
+async function createExif(packname, authorname, pathname) {
+  if (existsAsync(pathname)) return true;
   const pack = {
     'sticker-pack-id': 'com.snowcorp.stickerly.android.stickercontentprovider b5e7275f-f1de-4137-961f-57becfad34f2',
     'sticker-pack-name': packname,
@@ -513,19 +472,19 @@ function createExif(packname, authorname, pathname) {
   const jsonBuffer = Buffer.from(JSON.stringify(pack), 'utf-8');
   const exif = Buffer.concat([exifAttr, jsonBuffer]);
   exif.writeUIntLE(jsonBuffer.length, 14, 4);
-  fs.writeFile(pathname, exif, (error) => {
-    if (error) throw error;
-    console.log('Success!');
-  });
-  return true;
+  await writeFileAsync(pathname, exif);
+  if (existsAsync(pathname)) {
+    return true;
+  } else {
+    throw new Error(`Failed to create EXIF file: ${pathname}`);
+  }
 }
 
 library.check = checkPackageWebpmux;
 library.convertToMp3 = xcodersConvertToMp3;
 library.folderSize = xcodersFolderSize;
-library.createWatermark = xcodersCreateSticker;
-library.stickerVideo = xcodersCreateStickerVIdeo;
-library.stickerImage = xcodersCreateStickerImage;
+library.createWatermark = xcodersCreateWatermark;
+library.createSticker = xcodersCreateSticker;
 library.formatSize = xcodersFormatSize;
 library.formatDuration = xcodersFormatDuration;
 library.createShortData = xcodersCreateShortData;
@@ -539,6 +498,7 @@ library.isVideoUrl = xcodersIsVideoUrl;
 library.requireJson = xcodersRequireJson;
 library.reloadModule = xcodersReloadModule;
 library.convertToPDF = xcodersConvertToPDF;
+library.convertToBuffer = xcodersArrayBufferToBuffer;
 library.parseResult = xcodersParseResult;
 library.capitalize = xcodersCapitalized;
 library.getMessage = xcodersLastKeysObject;

@@ -6,16 +6,22 @@ import loadedCommands from '../loadedCommands.js';
 import hitCommands from '../library/hitCommand.js';
 import functions from '../library/functions.js';
 
-const style = '᚛';
+const style = '⭑';
 const list = ['/', 'or'];
 const randomSplit = _.sample(list);
 const monospace = (str) => '```' + str + '```';
 const interline = (str) => '_' + str + '_';
 
 const allmenu = (m, prefix, name, rest) => {
+  let size = null;
   const listFeatures = functions.requireJson('./database/commands.json');
   const pathFolder = './session';
-  const { size } = process.platform !== 'android' ? functions.folderSize(pathFolder) : fs.lstatSync(pathFolder);
+  if (global.sizeSession) {
+    size = global.sizeSession;
+  } else {
+    size = (process.platform !== 'android' ? functions.folderSize(pathFolder) : fs.lstatSync(pathFolder)).size;
+    global.sizeSession = size;
+  }
   if (Object.keys(listFeatures).length < 1) {
     return loadedCommands(functions);
   }
@@ -25,17 +31,18 @@ const allmenu = (m, prefix, name, rest) => {
     position += `\t\t\t</ *${a.replace(/[^a-zA-Z0-9]/g, ' ')}* >\n${interline(style + ' ' + prefix + assignFeatures[a].join('_\n_' + style + ' ' + prefix).replaceAll('<', '*<').replaceAll('>', '>*').replace(':', randomSplit))}\n\n`;
   });
   return `
-▪ ${monospace(`Hallo ${name} ⌈ @${m.sender.split('@')[0]} ⌋`)} 👋
-▪ *Date*: ${monospace(moment().tz('Asia/Jakarta').locale('id').format('LLL'))}
-▪ *Api*: ${monospace(rest)}
-▪ *Session*: ${monospace(functions.formatSize(size))}
+  ${monospace(`Hallo ${name} ⦋ @${m.sender.split('@')[0]} ⦌`)} 👋
 
-▪ *Notes*:
-  ${style + ' ' + monospace('Gunakan Fitur tanpa simbol <>')}
-  ${style + ' ' + monospace('Jangan spam bot...')}
+⬟ *Date*: ${monospace(moment().tz('Asia/Jakarta').locale('id').format('LLL'))}
+⬟ *Api*: ${monospace(rest)}
+⬟ *Session*: ${monospace(functions.formatSize(size))}
+
+⬟ *Notes*:
+  ${'⧾ ' + monospace('Gunakan Fitur tanpa simbol <>')}
+  ${'⧾ ' + monospace('Jangan spam bot...')}
 
 ${position}
-${hitCommands.popularCommand(1) ? `▪ *3 Most Popular Features*\n${hitCommands.popularCommand(3).slice(0, -2)}` : ''}`;
+${hitCommands.popularCommand(1) ? `⬟ *3 Most Popular Features*\n\r${hitCommands.popularCommand(3, '\r \r \r', '\t\t\t').slice(0, -2)}` : ''}`;
 };
 
 const mostPopular = (obj) => {
@@ -47,7 +54,7 @@ const mostPopular = (obj) => {
   });
   return sortedCommands.map(command => {
     const { count, done, fail } = obj[command];
-    return `♨️ ${monospace(command)}\n\t⊳ ${monospace('Done:')} *${done} Count*\n\t⊳ ${monospace('Fail:')} *${fail} Count*\n\t⊳ ${monospace('Total:')} *${count} Hit*\n\n`;
+    return `⬟ ${monospace(command)}\n\t⊳ ${monospace('Done:')} *${done} Count*\n\t⊳ ${monospace('Fail:')} *${fail} Count*\n\t⊳ ${monospace('Total:')} *${count} Hit*\n\n`;
   }).join('');
 }
 

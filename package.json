@@ -30,6 +30,7 @@
     "pdfkit": "^0.13.0",
     "performance-now": "^2.1.0",
     "pino": "^8.14.1",
+    "similarity": "^1.2.1",
     "yargs": "^17.7.2"
   },
   "devDependencies": {

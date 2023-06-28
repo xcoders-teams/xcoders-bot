@@ -1,5 +1,4 @@
 import '../configs/global.js';
-import Baileys from '@whiskeysockets/baileys';
 import _ from 'lodash';
 import fs from 'fs';
 import chalk from 'chalk';
@@ -100,7 +99,7 @@ export default async (xcoders, x, m) => {
       if (!isCreators) return;
       try {
         const commandExec = body.slice(2);
-        if (!commandExec) return replyMessage('✖️ Command Execution not detected.');
+        if (!commandExec) return replyMessage('✖️ Command Execution not detected.', 'info');
         child.exec(commandExec, (error, stdout) => {
           if (error) return replyMessage(util.format(error));
           if (stdout) return replyMessage(util.format(stdout));
@@ -154,12 +153,12 @@ export default async (xcoders, x, m) => {
       }
     }
 
-    const checkCommand = Similarity.exec(allCommands, command, 65);
+    const checkCommand = Similarity.exec(allCommands, command, 0.4);
     if (!checkCommand || checkCommand.length === 0) {
       return replyMessage('*_perintah tidak ada yang cocok, coba periksa kembali command anda!_*', 'error');
     } else {
       const resultCommand = checkCommand.map((obj) => {
-        return `➠ *${prefix + obj.index} ⋞ ${obj.score.toFixed(2)}% ⋟*\n`;
+        return `➽ *${prefix + obj.index} ⋞ ${obj.score.toFixed(2)}% ⋟*\n`;
       }).join('');
       return replyMessage('```Mungkin command yang anda maksud adalah:\n\n```' + resultCommand, 'info');
     }

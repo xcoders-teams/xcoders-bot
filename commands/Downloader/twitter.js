@@ -2,7 +2,7 @@
 
 export default {
   views: ['twitter < url >'], // view for message in  menu
-  command: /^(twit(dl|down)|twitter)$/i, //another command.
+  command: /^(twit(|dl|down)|twitter)$/i, //another command.
   description: 'Download media from Twitter Url',
   query: true,
   url: true,

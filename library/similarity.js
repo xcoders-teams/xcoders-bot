@@ -1,5 +1,7 @@
 'use strict';
 
+import similarity from 'similarity';
+
 class Similarity {
 
   calculateSimilarityScoreOne(stringOne, stringTwo) {
@@ -13,7 +15,7 @@ class Similarity {
       }
     }
     const result = (commonChars / maxLength) * 100;
-    return parseFloat(result);
+    return parseFloat(result.toFixed(2));
   }
 
   calculateSimilarityScoreTwo(inputOne, inputTwo) {
@@ -54,32 +56,25 @@ class Similarity {
       const checkScoreTwo = this.calculateSimilarityScoreTwo(name, keyword.toLowerCase());
 
       if (checkScoreOne >= similarity || name.includes(keyword.toLowerCase())) {
-        const score = checkScoreOne.toString() === '100' ? checkScoreOne : checkScoreOne.toFixed(2);
-        matches.push({ index: name, score });
+        const score = checkScoreOne === 100 ? checkScoreOne : checkScoreOne.toFixed(2);
+        matches.push({ index: name, score: score.toString() });
       }
       if (checkScoreTwo >= similarity || name.includes(keyword.toLowerCase())) {
-        matches.concat({ index: name, score: checkScoreTwo });
+        matches.push({ index: name, score: checkScoreTwo.toString() });
       }
     }
-    return matches;
+    return matches.filter(({ score }) => score != 0.00)
   }
 
-  exec(array, string, score) {
-    const result = [];
-    for (let i = 0; i < array.length; i++) {
-      const currentString = array[i];
-      let matchCount = 0;
-      for (let index = 0; index < currentString.length; index++) {
-        if (string.includes(currentString[index])) {
-          matchCount++;
-        }
-      }
-      const similarityScore = (matchCount / currentString.length) * 100;
-      if (similarityScore >= score && similarityScore != 100) {
-        result.push({ index: currentString, score: similarityScore });
+  exec(array, string, score = 0.6) {
+    const match = [];
+    for (var i = 0; i < array.length; i++) {
+      const checkScore = similarity(array[i], string);
+      if (checkScore >= score) {
+        match.push({ index: array[i], score: checkScore });
       }
     }
-    return result;
+    return match;
   }
 }
 export default new Similarity();

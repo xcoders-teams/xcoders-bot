@@ -44,18 +44,18 @@ class HitCommandTracker {
     return highHitCommands.map(command => `• ${command}: ${this.hitCommand[command].count} Hit`).join('\n');
   }
 
-  popularCommand(count = 1) {
+  popularCommand(count = 1, style, styleClass) {
     const keys = Object.keys(this.hitCommand);
     if (keys.length < 1) return '';
     const sortedCommands = keys.sort((a, b) => {
-        if (this.hitCommand[b].count === this.hitCommand[a].count) {
-            return this.hitCommand[b].done - this.hitCommand[a].done;
-        }
-        return this.hitCommand[b].count - this.hitCommand[a].count;
+      if (this.hitCommand[b].count === this.hitCommand[a].count) {
+        return this.hitCommand[b].done - this.hitCommand[a].done;
+      }
+      return this.hitCommand[b].count - this.hitCommand[a].count;
     }).slice(0, count);
     return sortedCommands.map(command => {
-        const { count, done, fail } = this.hitCommand[command];
-        return `♨️ ${this.monospace(command)}\n\t• Done: *${done} Count*\n\t• Fail: *${fail} Count*\n\t• Total: *${count} Hit*\n\n`;
+      const { count, done, fail } = this.hitCommand[command];
+      return `${style}⁂ ${this.monospace(command)}\n${styleClass}• Done: *${done} Count*\n${styleClass}• Fail: *${fail} Count*\n${styleClass}• Total: *${count} Hit*\n\n`;
     }).join('');
   }
 }

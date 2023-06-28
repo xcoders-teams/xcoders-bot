@@ -10,13 +10,13 @@ export default {
   execute: async ({ xcoders, x, m, query, styleMessage, invalidUrlMessage, errorMessage, waitingMessage, apikeys, regex, host, getMessage, parseResult, getJson, addHitCommand }) => {
     try {
       if (!regex.media(query)) return invalidUrlMessage(m.chat);
-      const data = await getJson(`${host}/api/download/ytmp4?url=${query}&apikey=${apikeys}`);
+      const data = await getJson(`${host}/api/download/y2mate-video?url=${query}&apikey=${apikeys}`);
       if (!data.status) return errorMessage(m.chat, getMessage(data), 'YouTube Video');
       await waitingMessage(m.chat);
       const result = parseResult(data.result);
       const caption = styleMessage('YouTube Video Downloader', result);
       addHitCommand('YouTube Video', true);
-      return xcoders.sendFileFromUrl(m.chat, data.result.url, caption, x, { mimetype: 'video/mp4', jpegThumbnail: data.result.thumbnail });
+      return xcoders.sendFileFromUrl(m.chat, data.result.url, caption, x, { mimetype: 'video/mp4' });
     } catch (error) {
       return errorMessage(m.chat, error, 'YouTube Video');
     }
