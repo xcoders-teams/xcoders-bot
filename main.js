@@ -1,7 +1,11 @@
-import { spawn } from 'child_process';
+import { setupMaster, fork } from 'cluster';
+import { createInterface } from 'readline';
 import cfonts from 'cfonts';
+import yargs from 'yargs';
 import path from 'path';
 import fs from 'fs';
+
+const readline = createInterface(process.stdin, process.stdout);
 
 function start(connect) {
   console.clear();
@@ -20,9 +24,12 @@ function start(connect) {
     transitionGradient: true
   });
   const args = [path.join(connect), ...process.argv.slice(2)];
-  const pods = spawn(process.argv[0], args, {
-    stdio: ['inherit', 'inherit', 'inherit', 'ipc']
-  }).on('message', (data) => {
+  setupMaster({
+    exec: args[0],
+    args: args.slice(1)
+  });
+  const pods = fork();
+  pods.on('message', (data) => {
     console.log('[ xcoders ]', data);
     switch (data) {
       case 'reset':
@@ -30,17 +37,21 @@ function start(connect) {
         start.apply(this, arguments);
         break;
     }
-  }).on('error', (error) => {
-    if (error.code === 'ENOENT') {
-      console.error(`File not found: ${args[0]}`);
-      fs.watchFile(args[0], () => {
-        start();
-        fs.unwatchFile(args[0]);
-      });
-    } else {
-      console.error(error);
-    }
   });
+  pods.on('exit', (error, code) => {
+    console.error(`File not found: ${error}`);
+    if (code !== 1) start(connect);
+    fs.watchFile(args[0], () => {
+      fs.unwatchFile(args[0]);
+      start(connect);
+    });
+  });
+  const options = new Object(yargs(process.argv.slice(2)).exitProcess(false).parse());
+  if (!options.test) {
+    if (!readline.listenerCount()) readline.on('line', (line) => {
+      pods.emit('message', line.trim());
+    });
+  }
 }
 
 start('./index.js');
