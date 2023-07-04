@@ -1,5 +1,5 @@
+import '../configs/global.js';
 import crypto from 'crypto';
-import Baileys from '@whiskeysockets/baileys';
 const {
   generateWAMessageFromContent,
   generateForwardMessageContent,
@@ -118,7 +118,7 @@ const serialize = async (conn, m, functions) => {
       m.getQuotedObj = m.getQuotedMessage = async () => {
         if (!m.quoted.id) return false;
         const quotedMsg = await store.loadMessage(m.chat, m.quoted.id);
-        return serialize(conn, quotedMsg);
+        return serialize(conn, quotedMsg, functions);
       };
       let vM = m.quoted.fakeObj = proto.WebMessageInfo.fromObject({
         key: {
@@ -140,7 +140,7 @@ const serialize = async (conn, m, functions) => {
     m.text = (m.mtype == 'listResponseMessage' ? m.coders.singleSelectReply.selectedRowId : '') || m.coders.text || m.coders.caption || m.coders || '';
   }
   m.reply = (text, chatId, options) => conn.sendMessage(chatId ? chatId : m.chat, { text: text }, { quoted: m, detectLinks: false, thumbnail: global.thumbnail, ...options });
-  m.copy = () => serialize(conn, proto.WebMessageInfo.fromObject(proto.WebMessageInfo.toObject(m)));
+  m.copy = () => serialize(conn, proto.WebMessageInfo.fromObject(proto.WebMessageInfo.toObject(m)), functions);
   m.copyNForward = (jid = m.chat, message, forceForward = false, options = {}) => copyNForward(jid, message, forceForward, options);
   m.cMod = (jid, text = '', sender = m.sender, options = {}) => cMod(jid, m, text, sender, options);
   return m;

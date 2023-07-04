@@ -1,8 +1,8 @@
 'use strict';
 
 export default {
-  views: ['igdl < url >'], // view for message in  menu
-  command: /^(instadl|igdl|ig)$/i, //another command.
+  views: ['igdl <url>'],
+  command: /^(instadl|igdl|ig)$/i,
   description: 'Download media from Instagram Url',
   query: true,
   url: true,
@@ -16,8 +16,13 @@ export default {
       const result = parseResult(data.result);
       const caption = styleMessage('Instagram Media Downloader', result);
       addHitCommand('Instagram Media', true);
-      for (let { url } of data.result.data) {
-        await xcoders.sendFileFromUrl(m.chat, url, caption, x);
+      if (data.result.result_length === 1) {
+        return xcoders.sendFileFromUrl(m.chat, data.result.data[0].url, caption, x);
+      } else {
+        for (var i = 0; i < data.result.result_length; i++) {
+          await xcoders.sendFileFromUrl(m.chat, data.result.data[i].url, caption, x);
+        }
+        return;
       }
     } catch (error) {
       return errorMessage(m.chat, error, 'Instagram Media');

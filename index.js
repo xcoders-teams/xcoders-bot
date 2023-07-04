@@ -4,6 +4,9 @@ import fs from 'fs';
 import pino from 'pino';
 import chalk from 'chalk';
 import ffmpeg from 'fluent-ffmpeg';
+import { fileTypeFromBuffer } from 'file-type';
+import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
+ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 
 const {
   default: makeWASocket,
@@ -25,15 +28,6 @@ import functions from './library/functions.js';
 import pluginsCommand from './commands/index.commands.js';
 import loadedPlugins from './loadedCommands.js';
 
-try {
-  global.logger = logger;
-  await loadedPlugins(functions);
-  if (global.yargs.server) (await import('./server.js'));
-  await starting();
-} catch (error) {
-  throw error;
-}
-
 async function starting() {
   const { state, saveCreds } = await useMultiFileAuthState('session');
   const { version } = await fetchLatestBaileysVersion();
@@ -44,17 +38,20 @@ async function starting() {
     })
   });
 
+  store.readFromFile('./database/baileys_store.json');
+  setInterval(() => {
+    store.writeToFile('./database/baileys_store.json');
+  }, 10_000);
+
   const xcoders = makeWASocket({
     version: version,
     logger: pino({ level: 'silent' }),
     auth: state,
+    linkPreviewImageThumbnailWidth: 300,
     generateHighQualityLinkPreview: true,
     printQRInTerminal: true,
     markOnlineOnConnect: false,
     options: {
-      Headers: {
-        'User-Agent': global.userAgent
-      },
       httpsAgent: new https.Agent({
         rejectUnauthorized: false
       })
@@ -71,8 +68,7 @@ async function starting() {
     }
   });
 
-  xcoders.ev.on('connection.update', async (update) => {
-    const { connection, lastDisconnect, receivedPendingNotifications } = update;
+  xcoders.ev.on('connection.update', async ({ connection, lastDisconnect, receivedPendingNotifications }) => {
     if (connection === 'close') {
       const statusCode = lastDisconnect && lastDisconnect.error && lastDisconnect.error.output && lastDisconnect.error.output.statusCode;
       if (statusCode === DisconnectReason.loggedOut) {
@@ -132,20 +128,23 @@ async function starting() {
   xcoders.sendFileFromUrl = async (jid, url, caption = '', quoted = '', options = {}) => {
     try {
       const mentionedJid = options.mentionedJid ? options.mentionedJid : [];
-      const { result, mimetype, size } = await functions.getBuffer(url, { optional: true });
-      const MimeType = options.mimetype || mimetype;
-      
-      if (MimeType == 'image/gif' || options.gif) {
-        await xcoders.sendMessage(jid, { image: result, caption, mentionedJid, jpegThumbnail: icon, gifPlayback: true, gifAttribution: 1, ...options }, { quoted, upload: xcoders.waUploadToServer, mediaUploadTimeoutMs: 600000 });
-      } else if (/video/.test(MimeType)) {
-        const type = size > 100000000 ? 'document' : 'video';
-        await xcoders.sendMessage(jid, { [type]: result, caption, mentionedJid, jpegThumbnail: icon, ...options }, { quoted, upload: xcoders.waUploadToServer, mediaUploadTimeoutMs: 600000 });
-      } else if (/image/.test(MimeType)) {
-        await xcoders.sendMessage(jid, { image: result, caption, mentionedJid, jpegThumbnail: icon, ...options }, { quoted, upload: xcoders.waUploadToServer, mediaUploadTimeoutMs: 600000 });
-      } else if (/audio/.test(MimeType)) {
-        await xcoders.sendMessage(jid, { audio: result, caption, mentionedJid, jpegThumbnail: icon, ...options }, { quoted, upload: xcoders.waUploadToServer, mediaUploadTimeoutMs: 600000 });
-      } else if (!/video|image|audio/.test(MimeType)) {
-        await xcoders.sendMessage(jid, { document: result, caption, mentionedJid, jpegThumbnail: icon, ...options }, { quoted, upload: xcoders.waUploadToServer, mediaUploadTimeoutMs: 600000 });
+      const response = await fetch(url).then(response => response.arrayBuffer());
+      const result = functions.convertToBuffer(response);
+      const size = response.byteLength;
+      const type = await fileTypeFromBuffer(result);
+      const mimetype = !type ? options.mimetype : type.mime;
+      const ext = !type ? mimetype.split('/')[1] : type.ext;
+      if (mimetype == 'image/gif' || options.gif) {
+        await xcoders.sendMessage(jid, { image: result, caption, mentionedJid, jpegThumbnail: icon, gifPlayback: true, gifAttribution: 1, ...options }, { quoted });
+      } else if (/video/.test(mimetype)) {
+        const type = size >= 50000000 ? 'document' : 'video';
+        await xcoders.sendMessage(jid, { [type]: result, caption, mentionedJid, fileName: functions.getRandom(ext), mimetype: mimetype, jpegThumbnail: icon, ...options }, { quoted });
+      } else if (/image/.test(mimetype)) {
+        await xcoders.sendMessage(jid, { image: result, caption, mentionedJid, jpegThumbnail: icon, ...options }, { quoted });
+      } else if (/audio/.test(mimetype)) {
+        await xcoders.sendMessage(jid, { audio: result, caption, mentionedJid, jpegThumbnail: icon, ...options }, { quoted });
+      } else if (!/video|image|audio/.test(mimetype)) {
+        await xcoders.sendMessage(jid, { document: result, caption, mentionedJid, jpegThumbnail: icon, ...options }, { quoted });
       }
     } catch (error) {
       throw error;
@@ -156,7 +155,7 @@ async function starting() {
     const mimetype = getDevice(quoted.id) == 'ios' ? 'audio/mpeg' : 'audio/mp4';
     const type = options.type !== 'audio' ? 'documentMessage' : 'audioMessage';
     const option = options.type !== 'audio' ? { externalAdReply: { title: options.title || options.fileName, body: options.body || `${global.packname} ${global.authorname}`, mediaType: 1, renderLargerThumbnail: true, showAdAttribution: true, thumbnail: options.thumbnail || global.icon, sourceUrl: options.source || global.host, mediaUrl: options.source || global.host } } : {};
-    const prepareMessage = (buffer) => prepareWAMessageMedia({ [options.type || 'document']: buffer, mimetype, fileName: options.fileName || functions.getRandom('.mp3'), contextInfo: { ...option, forwardingScore: 9999999, isForwarded: true } }, { upload: xcoders.waUploadToServer, });
+    const prepareMessage = (buffer) => prepareWAMessageMedia({ [options.type || 'document']: buffer, mimetype, fileName: options.fileName || functions.getRandom('.mp3'), contextInfo: { ...option, forwardingScore: 9999999, isForwarded: true } }, { upload: xcoders.waUploadToServer });
     if (!options.ffmpeg) {
       const result = await functions.getBuffer(url);
       await delay(1000);
@@ -168,7 +167,7 @@ async function starting() {
       const file_name = Date.now() + '.mp3';
       const path_files = `./temp/${file_name}`;
       const stream = fs.createWriteStream(path_files);
-      await ffmpeg(url)
+      ffmpeg(url)
         .audioBitrate(138)
         .audioChannels(2)
         .audioCodec('libmp3lame')
@@ -210,6 +209,15 @@ async function starting() {
     return serializeMessage(xcoders, forced);
   };
   return xcoders;
+}
+
+try {
+  global.logger = logger;
+  await loadedPlugins(functions);
+  (await import('./server.js')).default;
+  await starting();
+} catch (error) {
+  throw error;
 }
 
 const files = global.absoluteUrl(import.meta.url);

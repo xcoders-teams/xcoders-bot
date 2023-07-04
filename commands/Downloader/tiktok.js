@@ -7,7 +7,7 @@ export default {
   query: true,
   url: true,
   usage: '%cmd% url tiktok --wm or --nowm\nFlag --wm untuk video dengan watermark.\nFlag --nowm untuk video tanpa watermark.',
-  execute: async ({ prefix, command, xcoders, x, m, query, styleMessage, invalidUrlMessage, errorMessage, replyMessage, waitingMessage, apikeys, regex, host, getMessage, parseResult, getJson, addHitCommand }) => {
+  execute: async ({ xcoders, x, m, query, styleMessage, invalidUrlMessage, errorMessage, replyMessage, waitingMessage, apikeys, regex, host, getMessage, parseResult, getJson, addHitCommand }) => {
     try {
       if (!regex.media(query)) return invalidUrlMessage(m.chat);
       let flag = null;
@@ -16,7 +16,7 @@ export default {
       } else if (query.endsWith('--wm')) {
         flag = 'video_watermark';
       } else {
-        return replyMessage('silahkan tambah flag diakhir setelah url contoh:\n\n*' + prefix + command + ' ' + query + ' --wm* untuk watermark dan --nowm untuk tanpa watermark', 'info');
+        flag = 'video_watermark';
       }
       const data = await getJson(`${host}/api/download/tiktok?url=${query}&apikey=${apikeys}`);
       if (!data.status) return errorMessage(m.chat, getMessage(data), 'Tiktok Downloader');
@@ -24,7 +24,7 @@ export default {
       const result = parseResult(data.result);
       const caption = styleMessage('Tiktok Media Downloader', result);
       addHitCommand('Tiktok Downloader', true);
-      if (data.result.result_url) {
+      if (data.result?.result_url) {
         for (let { display_image } of data.result.result_url) {
           await xcoders.sendFileFromUrl(m.chat, display_image.url_list[1], caption, x);
         }

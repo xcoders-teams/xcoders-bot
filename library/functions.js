@@ -10,10 +10,13 @@ import fetch from 'node-fetch';
 import webpmux from 'node-webpmux';
 import Module from 'module';
 import _ from 'lodash';
+import { Readable as Stream } from 'stream';
 import { exec as childExec, spawn } from 'child_process';
+import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
 import ffmpeg from 'fluent-ffmpeg';
-import Baileys from '@whiskeysockets/baileys';
 import { fileTypeFromBuffer } from 'file-type';
+
+ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 
 import ParseResult from './parseResult.js';
 
@@ -31,7 +34,7 @@ function xcodersLastKeysObject(input) {
   const keys = Object.keys(input);
   const lastKey = keys[keys.length - 1];
   const lastValue = input[lastKey];
-  if (typeof lastValue === 'object') return lastKeysObject(lastValue);
+  if (typeof lastValue === 'object') return xcodersLastKeysObject(lastValue);
   if (Array.isArray(lastValue)) return _.sample(response.error.request);
   if (!lastValue) return _.sample(response.error.request);
   return lastValue;
@@ -172,34 +175,39 @@ function xcodersGetBuffer(url, options = {}) {
         'DNT': '1',
         'Upgrade-Insecure-Request': '1',
         'User-Agent': global.userAgent
-      },
-      responseType: 'arraybuffer'
+      }
     };
-    const req = protocol.request(url, requestOptions, (res) => {
-      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-        const redirectUrl = new URL(res.headers.location, url);
+    const request = protocol.request(url, requestOptions, (response) => {
+      if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
+        const redirectUrl = new URL(response.headers.location, url);
         xcodersGetBuffer(redirectUrl.href, options).then(resolve).catch(reject);
+        request.abort();
+        return;
       } else {
         const chunks = [];
-        res.on('data', (chunk) => chunks.push(chunk));
-        res.on('end', async () => {
+        response.on('data', (chunk) => chunks.push(chunk));
+        response.on('end', async () => {
           const data = Buffer.concat(chunks);
-          const { ext } = await fileTypeFromBuffer(data);
+          const stream = new Stream.PassThrough();
+          stream.end(data);
+          const bufferStream = stream.read();
+          const type = await fileTypeFromBuffer(bufferStream);
+          const ext = !type ? response.headers['content-type'].split('/')[1] : type.ext;
           if (!options.optional) {
-            resolve(data);
+            resolve(bufferStream);
           } else {
             resolve({
-              mimetype: res.headers['content-type'],
-              size: res.headers['content-length'],
+              mimetype: response.headers['content-type'],
+              size: response.headers['content-length'],
               ext: ext,
-              result: data
+              result: bufferStream
             });
           }
         });
       }
     });
-    req.on('error', reject);
-    req.end();
+    request.on('error', reject);
+    request.end();
   });
 }
 
@@ -271,7 +279,7 @@ function xcodersFormatDuration(seconds) {
 
 
 function xcodersGetRandom(ext) {
-  return `${Math.floor(Math.random() * 10000000) + 1}${ext.includes('.') ? ext : `.${ext}`}`;
+  return `${crypto.randomBytes(16).toString('hex')}${ext.includes('.') ? ext : `.${ext}`}`;
 }
 
 async function xcodersDownloadContentMediaMessage(message, options = {}) {
@@ -332,6 +340,8 @@ function xcodersFolderSize(folderPath) {
 }
 
 async function xcodersCreateSticker(media, options = {}, nameExif = './temp/data.exif') {
+  media = Buffer.isBuffer(media) ? media : existsAsync(media) ? await readFileAsync(media) : null;
+  if (!Buffer.isBuffer(media)) throw new Error('file is not a Buffer object.');
   const { ext } = await fileTypeFromBuffer(media);
   const tmpFileOut = path.join(process.cwd(), 'temp', xcodersGetRandom('.webp'));
   const tmpFileIn = path.join(process.cwd(), 'temp', xcodersGetRandom(ext));
@@ -429,7 +439,25 @@ async function xcodersConvertToMp3(data) {
   } catch (error) {
     throw error;
   }
-};
+}
+
+function xcodersConvertGifToMp4(inputFilePath, outputFilePath) {
+  return new Promise((resolve, reject) => {
+    ffmpeg(inputFilePath)
+      .inputOptions('-ignore_loop 0')
+      .outputOptions('-movflags faststart')
+      .output(outputFilePath)
+      .on('end', () => {
+        console.log('Conversion completed successfully.');
+        resolve(true);
+      })
+      .on('error', (error) => {
+        console.error('Error during conversion:', error.message);
+        reject(error);
+      })
+      .run();
+  });
+}
 
 function reactEmoji() {
   const emojiList = {
@@ -481,6 +509,7 @@ async function createExif(packname, authorname, pathname) {
 }
 
 library.check = checkPackageWebpmux;
+library.convertToMp4 = xcodersConvertGifToMp4;
 library.convertToMp3 = xcodersConvertToMp3;
 library.folderSize = xcodersFolderSize;
 library.createWatermark = xcodersCreateWatermark;

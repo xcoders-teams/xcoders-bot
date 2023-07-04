@@ -18,11 +18,7 @@ export default {
                 contentType: mimetype,
                 filename: name
             });
-            const { data } = await axios.post(`${host}/api/maker/rmbg?apikey=${apikeys}`, FormData.getBuffer(), {
-                headers: {
-                    ...FormData.getHeaders()
-                }
-            });
+            const { data } = await axios.post(`${host}/api/maker/remove-bg?apikey=${apikeys}`, FormData.getBuffer(), { headers: FormData.getHeaders() });
             if (!data.status || data.message) return errorMessage(m.chat, getMessage(data), ' Remove Background');
             await waitingMessage(m.chat);
             const images = await getBuffer(data.url);

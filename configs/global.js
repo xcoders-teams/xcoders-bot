@@ -6,15 +6,13 @@ import Baileys from '@whiskeysockets/baileys';
 import cheerio from 'cheerio';
 import { platform } from 'process';
 import { fileURLToPath } from 'url';
-import yargs from 'yargs/yargs';
 
 global.restApi = ['https://api-xcoders.site', 'https://api-fxc7.cloud.okteto.net'];
 global.ownerNumber = ['6285956396417@s.whatsapp.net'];
-global.yargs = new Object(yargs(process.argv.slice(2)).exitProcess(false).parse());
 global.absoluteUrl = (pathFiles) => {
   if (platform !== 'android') {
-    const filePath = fileURLToPath(pathFiles);
-    return filePath;
+    const updateFile = fileURLToPath(import.meta.url).toString();
+    return updateFile;
   } else {
     return fileURLToPath(pathFiles);
   }
@@ -24,7 +22,7 @@ global.axios = axios;
 global.cheerio = cheerio;
 global.PORT = process.env.PORT || 8000;
 global.prefix = '!';
-global.apikeys = 'YOUR APIKEYS';
+global.apikeys = 'kntl';
 global.multiprefix = true;
 global.nonprefix = false;
 global.public = true;

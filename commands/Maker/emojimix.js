@@ -13,7 +13,7 @@ export default {
             if (matchedEmoji.length > 2 || matchedEmoji.length < 2) return errorMessage(m.chat, `Emoji tidak boleh lebih dari ${matchedEmoji.length}`);
             const emoji = matchedEmoji.map(match => match[0]);
             const data = await getJson(`${host}/api/maker/emoji-mix?emoji=${emoji[0]}&emoji2=${emoji[1]}&result_type=json&apikey=${apikeys}`);
-            const buffer = Buffer.from(data, 'buffer');
+            const buffer = Buffer.from(data);
             const result = command.startsWith('s') ? await createSticker(buffer) : buffer;
             const type = command.startsWith('s') ? 'sticker' : 'image';
             await waitingMessage(m.chat);

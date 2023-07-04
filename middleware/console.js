@@ -217,7 +217,7 @@ class Logger {
       }));
     }
   }
-  load(...strings) {
+  load() {
     const P = ['\\', '|', '/', '-'];
     let x = 0;
     const loader = setInterval(() => {

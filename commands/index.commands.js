@@ -34,11 +34,11 @@ export default async (xcoders, x, m) => {
     const isCreators = m.fromMe || owners && owners.includes(m.sender);
     const senderName = x.pushName || 'unknown';
     const groupId = m.isGroups ? m.chat : '';
-    const metadataGroups = m.isGroups ? await xcoders.groupMetadata(groupId).catch(() => { }) : {};
-    const getParticipants = m.isGroups ? metadataGroups.participants : [];
-    const getAdminsGroups = m.isGroups ? getParticipants.filter(index => index.admin !== null) : [];
-    const isAdminsGroups = m.isGroups ? getAdminsGroups.includes(m.sender) : false;
-    const isBotAdminsGroups = m.isGroups ? getAdminsGroups.includes(jidNormalizedUser(xcoders.user.id)) : false;
+    const metadataGroups = m.isGroups ? await xcoders.groupMetadata(groupId).catch((_) => null) : {};
+    const getParticipants = m.isGroups ? metadataGroups?.participants : [];
+    const getAdminsGroups = m.isGroups ? getParticipants?.filter(index => index.admin !== null) : [];
+    const isAdminsGroups = m.isGroups ? getAdminsGroups?.includes(m.sender) : false;
+    const isBotAdminsGroups = m.isGroups ? getAdminsGroups?.includes(jidNormalizedUser(xcoders.user.id)) : false;
     const getCurrentTime = moment.tz('Asia/Jakarta').locale('id').format('HH:mm');
     const host = original ? restApi[0] : restApi[1];
 
@@ -66,8 +66,8 @@ export default async (xcoders, x, m) => {
       return (title ? `\r \r \r \r \r ⋞ ${'```' + title + '```'} ⋟\n\n${content}\n\n${watermark}` : `\n\n${content}\n\n${watermark}`).trim();
     };
 
-    if (isCommand) console.log(chalk.bgBlack.red.italic.bold(getCurrentTime), chalk.bold.italic.green(`[ EXEC ${command.toUpperCase()} ]`), chalk.italic.greenBright.bold('From'), chalk.bold.italic.yellow(senderName), m.isGroups ? chalk.italic.bold.greenBright('in ') + chalk.italic.bold.yellow(metadataGroups.subject) : '');
-    if (!isCommand) console.log(chalk.bgBlack.italic.red.bold(getCurrentTime), chalk.italic.red('[ MSG ]'), chalk.bold.italic.greenBright('From'), chalk.italic.bold.yellow(senderName), m.isGroups ? chalk.italic.bold.greenBright('in ') + chalk.italic.bold.yellow(metadataGroups.subject) : '');
+    if (isCommand) console.log(chalk.bgBlack.red.italic.bold(getCurrentTime), chalk.bold.italic.green(`[ EXEC ${command.toUpperCase()} ]`), chalk.italic.greenBright.bold('From'), chalk.bold.italic.yellow(senderName), m.isGroups ? chalk.italic.bold.greenBright('in ') + chalk.italic.bold.yellow(metadataGroups?.subject) : '');
+    if (!isCommand) console.log(chalk.bgBlack.italic.red.bold(getCurrentTime), chalk.italic.red('[ MSG ]'), chalk.bold.italic.greenBright('From'), chalk.italic.bold.yellow(senderName), m.isGroups ? chalk.italic.bold.greenBright('in ') + chalk.italic.bold.yellow(metadataGroups?.subject) : '');
     if (isCommand && m.isBaileys) return;
     if (!global.public && isCommand && !isCreators) return;
 
@@ -112,6 +112,13 @@ export default async (xcoders, x, m) => {
       return replyMessage('```Online ' + functions.formatDuration(process.uptime()) + '```');
     }
 
+    // reload server every 5 minutes
+    setInterval(async () => {
+      if (process.env.REPL_OWNER) {
+        const url = `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`;
+        await fetch(url).then((response) => response.json()).then(() => console.log('sucessfully loaded server...')).catch((error) => console.error(error));
+      }
+    }, 300000)
     // save database every 1 minutes
     setInterval(function () {
       fs.writeFileSync('./database/allCommands.json', JSON.stringify(global.allCommands, null, 2));
@@ -153,14 +160,16 @@ export default async (xcoders, x, m) => {
       }
     }
 
-    const checkCommand = Similarity.exec(allCommands, command, 0.4);
-    if (!checkCommand || checkCommand.length === 0) {
-      return replyMessage('*_perintah tidak ada yang cocok, coba periksa kembali command anda!_*', 'error');
-    } else {
-      const resultCommand = checkCommand.map((obj) => {
-        return `➽ *${prefix + obj.index} ⋞ ${obj.score.toFixed(2)}% ⋟*\n`;
-      }).join('');
-      return replyMessage('```Mungkin command yang anda maksud adalah:\n\n```' + resultCommand, 'info');
+    if (!m.isGroups) {
+      const checkCommand = Similarity.exec(allCommands, command, 0.4);
+      if (!checkCommand || checkCommand.length === 0) {
+        return replyMessage('*_perintah tidak ada yang cocok, coba periksa kembali command anda!_*', 'error');
+      } else {
+        const resultCommand = checkCommand.map((obj) => {
+          return `➽ *${prefix + obj.index} ⋞ ${obj.score.toFixed(2)}% ⋟*\n`;
+        }).join('');
+        return replyMessage('```Mungkin command yang anda maksud adalah:\n\n```' + resultCommand.trim(), 'info');
+      }
     }
   } catch (error) {
     console.error(chalk.redBright(`[ ERROR ] ${moment().format('HH:mm:ss')}`), error);

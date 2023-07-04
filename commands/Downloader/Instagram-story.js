@@ -14,9 +14,13 @@ export default {
       await waitingMessage(m.chat);
       const caption = styleMessage('Instagram Story Downloader', `• ID: ${data.result.id}\n• Username: ${data.result.username}\n• Fullname: ${data.result.fullname}`);
       addHitCommand('Instagram Story', true);
-      for (let { url } of data.result.data) {
-        if (!url) return errorMessage(m.chat, getMessage(data), 'Instagram Story');
-        await xcoders.sendFileFromUrl(m.chat, url, caption, x);
+      if (data.result.result_length === 1) {
+        return xcoders.sendFileFromUrl(m.chat, data.result.data[0].url, caption, x);
+      } else {
+        for (var i = 0; i < data.result.data.length; i++) {
+          await xcoders.sendFileFromUrl(m.chat, data.result.data[i].url, caption, x);
+        }
+        return;
       }
     } catch (error) {
       return errorMessage(m.chat, error, 'Instagram Story');
