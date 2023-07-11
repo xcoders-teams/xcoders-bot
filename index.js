@@ -1,16 +1,19 @@
 // External modules
+import _ from 'lodash';
+import pino from 'pino';
 import https from 'https';
 import fs from 'fs';
-import pino from 'pino';
 import chalk from 'chalk';
+import yargs from 'yargs';
 import ffmpeg from 'fluent-ffmpeg';
-import { fileTypeFromBuffer } from 'file-type';
 import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
+
 ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 
 const {
   default: makeWASocket,
   delay,
+  proto,
   WAProto,
   getDevice,
   jidDecode,
@@ -19,35 +22,34 @@ const {
   DisconnectReason,
   makeInMemoryStore,
   prepareWAMessageMedia,
-  generateWAMessageFromContent
+  generateWAMessageFromContent,
+  makeCacheableSignalKeyStore
 } = Baileys;
 
+import regex from './configs/regex.js';
 import logger from './middleware/console.js';
 import serializeMessage from './middleware/serialize.js';
 import functions from './library/functions.js';
 import pluginsCommand from './commands/index.commands.js';
 import loadedPlugins from './loadedCommands.js';
 
-async function starting() {
+const starting = async () => {
+  const Logger = pino({});
+  Logger.level = 'silent';
   const { state, saveCreds } = await useMultiFileAuthState('session');
   const { version } = await fetchLatestBaileysVersion();
   const store = makeInMemoryStore({
-    logger: pino().child({
-      level: 'silent',
-      stream: 'store'
-    })
+    logger: Logger
   });
-
-  store.readFromFile('./database/baileys_store.json');
-  setInterval(() => {
-    store.writeToFile('./database/baileys_store.json');
-  }, 10_000);
 
   const xcoders = makeWASocket({
     version: version,
-    logger: pino({ level: 'silent' }),
-    auth: state,
-    linkPreviewImageThumbnailWidth: 300,
+    logger: Logger,
+    mobile: process.argv.includes('--mobile'),
+    auth: {
+      creds: state.creds,
+      keys: makeCacheableSignalKeyStore(state.keys, Logger)
+    },
     generateHighQualityLinkPreview: true,
     printQRInTerminal: true,
     markOnlineOnConnect: false,
@@ -62,13 +64,18 @@ async function starting() {
       return message;
     },
     getMessage: async (key) => {
-      if (!store) return { conversation: 'hello there!' };
-      const msg = await store.loadMessage(key.remoteJid, key.id);
-      return msg.message || undefined;
+      if (store) {
+        const msg = await store.loadMessage(key.remoteJid, key.id);
+        return msg?.message || undefined;
+      }
+      return proto.Message.fromObject({});
     }
   });
 
-  xcoders.ev.on('connection.update', async ({ connection, lastDisconnect, receivedPendingNotifications }) => {
+  xcoders.ev.on('creds.update', saveCreds);
+  store.bind(xcoders.ev);
+
+  xcoders.ev.on('connection.update', async ({ qr, connection, lastDisconnect, receivedPendingNotifications }) => {
     if (connection === 'close') {
       const statusCode = lastDisconnect && lastDisconnect.error && lastDisconnect.error.output && lastDisconnect.error.output.statusCode;
       if (statusCode === DisconnectReason.loggedOut) {
@@ -94,14 +101,11 @@ async function starting() {
     } else if (connection === 'open') {
       logger.success(chalk.green('[ xcoders ] Connected...'));
       global.qrcode = null;
-    } else if (update.qr) {
-      global.qrcode = update.qr;
+    } else if (qr) {
+      global.qrcode = qr;
     }
     if (receivedPendingNotifications) logger.info('Waiting new message...\n');
   });
-
-  xcoders.ev.on('creds.update', saveCreds);
-  store.bind(xcoders.ev);
 
   xcoders.ev.on('messages.upsert', async ({ type, messages }) => {
     try {
@@ -122,18 +126,18 @@ async function starting() {
     }
   });
 
+  xcoders.ev.on('messaging-history.set', ({ chats, contacts, messages, isLatest }) => {
+    logger.info(`recv ${chats.length} chats, ${contacts.length} contacts, ${messages.length} msgs (is latest: ${isLatest})`);
+  });
+
   xcoders.ev.on('close', () => starting());
   global.store = store;
 
   xcoders.sendFileFromUrl = async (jid, url, caption = '', quoted = '', options = {}) => {
     try {
+      if (!regex.url(url)) return xcoders.sendMessage(jid, { text: '*_Error Downloading files..._*' }, { quoted });
       const mentionedJid = options.mentionedJid ? options.mentionedJid : [];
-      const response = await fetch(url).then(response => response.arrayBuffer());
-      const result = functions.convertToBuffer(response);
-      const size = response.byteLength;
-      const type = await fileTypeFromBuffer(result);
-      const mimetype = !type ? options.mimetype : type.mime;
-      const ext = !type ? mimetype.split('/')[1] : type.ext;
+      const { result, mimetype, ext, size } = await functions.getBuffer(url, { optional: true });
       if (mimetype == 'image/gif' || options.gif) {
         await xcoders.sendMessage(jid, { image: result, caption, mentionedJid, jpegThumbnail: icon, gifPlayback: true, gifAttribution: 1, ...options }, { quoted });
       } else if (/video/.test(mimetype)) {
@@ -144,7 +148,7 @@ async function starting() {
       } else if (/audio/.test(mimetype)) {
         await xcoders.sendMessage(jid, { audio: result, caption, mentionedJid, jpegThumbnail: icon, ...options }, { quoted });
       } else if (!/video|image|audio/.test(mimetype)) {
-        await xcoders.sendMessage(jid, { document: result, caption, mentionedJid, jpegThumbnail: icon, ...options }, { quoted });
+        await xcoders.sendMessage(jid, { document: result, caption, mimetype: mimetype, fileName: `${options.name}.${ext}`, mentionedJid, jpegThumbnail: icon, ...options }, { quoted });
       }
     } catch (error) {
       throw error;
@@ -152,37 +156,55 @@ async function starting() {
   };
 
   xcoders.sendAudioFromUrl = async (jid, url, quoted, options = {}) => {
-    const mimetype = getDevice(quoted.id) == 'ios' ? 'audio/mpeg' : 'audio/mp4';
-    const type = options.type !== 'audio' ? 'documentMessage' : 'audioMessage';
-    const option = options.type !== 'audio' ? { externalAdReply: { title: options.title || options.fileName, body: options.body || `${global.packname} ${global.authorname}`, mediaType: 1, renderLargerThumbnail: true, showAdAttribution: true, thumbnail: options.thumbnail || global.icon, sourceUrl: options.source || global.host, mediaUrl: options.source || global.host } } : {};
-    const prepareMessage = (buffer) => prepareWAMessageMedia({ [options.type || 'document']: buffer, mimetype, fileName: options.fileName || functions.getRandom('.mp3'), contextInfo: { ...option, forwardingScore: 9999999, isForwarded: true } }, { upload: xcoders.waUploadToServer });
-    if (!options.ffmpeg) {
-      const result = await functions.getBuffer(url);
-      await delay(1000);
-      const message = await prepareMessage(result);
-      const media = generateWAMessageFromContent(jid, { [type]: message[type] }, { quoted });
-      return xcoders.relayMessage(jid, media.message, { messageId: media.key.id });
-    } else {
-      const fileName = options.fileName || functions.getRandom('.mp3');
-      const file_name = Date.now() + '.mp3';
-      const path_files = `./temp/${file_name}`;
-      const stream = fs.createWriteStream(path_files);
-      ffmpeg(url)
-        .audioBitrate(138)
-        .audioChannels(2)
-        .audioCodec('libmp3lame')
-        .format('mp3')
-        .outputOptions(['-metadata', `title=${fileName}`, '-metadata', 'artist=xcoders-teams'])
-        .on('error', (error) => {
-          throw new Error(error);
-        }).on('end', async () => {
-          logger.success('Successfully...');
-          const buffer = fs.readFileSync(path_files);
-          const message = await prepareMessage(buffer);
-          const media = generateWAMessageFromContent(jid, { [type]: message[type] }, { quoted });
-          fs.unlinkSync(path_files);
-          return xcoders.relayMessage(jid, media.message, { messageId: media.key.id });
-        }).pipe(stream, { end: true });
+    try {
+      if (!regex.url(url)) return xcoders.sendMessage(jid, { text: '*_Error Downloading audio files..._*' }, { quoted });
+      const mimetype = getDevice(quoted.id) == 'ios' ? 'audio/mpeg' : 'audio/mp4';
+      const type = options.type !== 'audio' ? 'documentMessage' : 'audioMessage';
+      const option = options.type !== 'audio' ? { externalAdReply: { title: options.title || options.fileName, body: options.body || `${global.packname} ${global.authorname}`, mediaType: 1, renderLargerThumbnail: true, showAdAttribution: true, thumbnail: options.thumbnail || global.icon, sourceUrl: options.source || global.host, mediaUrl: options.source || global.host } } : {};
+      const prepareMessage = (buffer) => prepareWAMessageMedia({ [options.type || 'document']: buffer, mimetype, fileName: options.fileName || functions.getRandom('.mp3'), contextInfo: { ...option, forwardingScore: 9999999, isForwarded: true } }, { upload: xcoders.waUploadToServer });
+      if (options.stream) {
+        const fileName = options.fileName || functions.getRandom('.mp3');
+        const path_files = `./temp/${fileName}`;
+        const readable = fs.createWriteStream(path_files);
+        try {
+          const response = await axios.get(url, {
+            responseType: 'stream'
+          });
+          const stream = response.data.pipe(readable);
+          stream.on('error', async (error) => {
+            if (fs.existsSync(path_files)) await fs.promises.unlink(path_files);
+            console.error(error);
+            return xcoders.sendMessage(jid, { text: '*_Error Download files..._*' }, { quoted });
+          });
+          stream.on('finish', async () => {
+            try {
+              const buffer = await fs.promises.readFile(path_files);
+              if (fs.existsSync(path_files)) await fs.promises.unlink(path_files);
+              const message = await prepareMessage(buffer);
+              const media = generateWAMessageFromContent(jid, { [type]: message[type] }, { quoted });
+              return xcoders.relayMessage(jid, media.message, { messageId: media.key.id });
+            } catch (error) {
+              console.error(error);
+              return xcoders.sendMessage(jid, { text: '*_Error Reading files..._*' }, { quoted });
+            }
+          });
+        } catch (error) {
+          console.error(error);
+          return xcoders.sendMessage(jid, { text: '*_Error Downloading files..._*' }, { quoted });
+        }
+      } else {
+        const buffer = await fetch(url).then(response => response.arrayBuffer()).catch(async (error) => {
+          console.error(error);
+          await xcoders.sendMessage(jid, { text: '*_Error..._*' }, { quoted });
+        });
+        const result = functions.convertToBuffer(buffer);
+        await delay(1000);
+        const message = await prepareMessage(result);
+        const media = generateWAMessageFromContent(jid, { [type]: message[type] }, { quoted });
+        return xcoders.relayMessage(jid, media.message, { messageId: media.key.id });
+      }
+    } catch (error) {
+      throw error;
     }
   };
 
@@ -211,14 +233,23 @@ async function starting() {
   return xcoders;
 }
 
-try {
-  global.logger = logger;
-  await loadedPlugins(functions);
-  (await import('./server.js')).default;
-  await starting();
-} catch (error) {
-  throw error;
-}
+(async () => {
+  try {
+    const options = yargs(process.argv.slice(2)).exitProcess(false).parse();
+    global.options = options;
+    global.logger = logger;
+
+    await loadedPlugins();
+    await starting();
+
+    if (options.server) {
+      await import('./server.js');
+    }
+  } catch (error) {
+    throw error;
+  }
+
+})();
 
 const files = global.absoluteUrl(import.meta.url);
 fs.watchFile(files, () => {

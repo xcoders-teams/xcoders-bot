@@ -1,8 +1,10 @@
 import './configs/global.js';
+import functions from './library/functions.js';
+
 import fs from 'fs';
 import path from 'path';
 
-async function loadCommands(functions) {
+async function loadCommands() {
   const commandsPath = './commands';
   const plugins = fs.readdirSync(commandsPath);
   for (const plugin of plugins) {

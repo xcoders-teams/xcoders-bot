@@ -1,18 +1,15 @@
 import './configs/global.js';
 import { fetchLatestBaileysVersion } from '@whiskeysockets/baileys';
 import express from 'express';
-import http from 'http';
 import axios from 'axios';
 import qrcode from 'qrcode';
 import util from 'util';
 
-const apps = express();
-const server = http.createServer(apps);
-
 import html from './middleware/html.js';
 
+const apps = express();
+
 apps.set('json spaces', 2);
-apps.use(express.json());
 
 apps.get('*', async (_, res) => {
   try {
@@ -34,4 +31,4 @@ apps.get('*', async (_, res) => {
   }
 });
 
-server.listen(3000, () => console.log(`Express connected in port: ${PORT}`));
+apps.listen(PORT, () => console.log(`Express connected in port: ${PORT}`));
