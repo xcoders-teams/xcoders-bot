@@ -10,7 +10,7 @@ import fetch from 'node-fetch';
 import webpmux from 'node-webpmux';
 import Module from 'module';
 import _ from 'lodash';
-import { Readable as Stream } from 'stream';
+import archiver from 'archiver';
 import { exec as childExec, spawn } from 'child_process';
 import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
 import ffmpeg from 'fluent-ffmpeg';
@@ -91,72 +91,32 @@ function xcodersConvertToPDF(images = [], size = 'A4') {
   });
 }
 
-async function xcodersIsImageUrl(url) {
+async function xcodersCheckContentType(url, type) {
   try {
-    const protocol = url.startsWith('https') ? https : http;
+    const protocol = url.trim()?.startsWith('https') ? https : http;
     const requestOptions = {
       method: 'HEAD',
       headers: {
-        'User-Agent': 'is-image-header/1.0.1 (https://api-xcoders.site)'
+        'User-Agent': `is-${type}-header/01.05.2003 (https://api-xcoders.site)`
       }
     };
     const response = await new Promise((resolve, reject) => {
-      const req = protocol.request(url, requestOptions, (res) => resolve(res));
-      req.on('error', reject);
-      req.end();
+      const request = protocol.request(url.trim(), requestOptions, (content) => {
+        if (content.statusCode >= 300 && content.statusCode < 400 && content.headers.location) {
+          const redirectUrl = new URL(content.headers.location, url.trim());
+          xcodersCheckContentType(redirectUrl.href, type).then(resolve).catch(reject);
+          request.destroy();
+          return;
+        } else {
+          resolve(content);
+        }
+      });
+      request.on('error', reject);
+      request.end();
     });
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      return (/image\//gi).test(response.headers['content-type']);
-    } else {
-      return false;
-    }
-  } catch (error) {
-    console.error(error);
-    return false;
-  }
-}
-
-async function xcodersIsAudioUrl(url) {
-  try {
-    const protocol = url.startsWith('https') ? https : http;
-    const requestOptions = {
-      method: 'HEAD',
-      headers: {
-        'User-Agent': 'is-audio-header/1.0.2 (https://api-xcoders.site)'
-      }
-    };
-    const response = await new Promise((resolve, reject) => {
-      const req = protocol.request(url, requestOptions, (res) => resolve(res));
-      req.on('error', reject);
-      req.end();
-    });
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      return (/audio\//gi).test(response.headers['content-type']);
-    } else {
-      return false;
-    }
-  } catch (error) {
-    console.error(error);
-    return false;
-  }
-}
-
-async function xcodersIsVideoUrl(url) {
-  try {
-    const protocol = url.startsWith('https') ? https : http;
-    const requestOptions = {
-      method: 'HEAD',
-      headers: {
-        'User-Agent': 'is-video-header/1.0.3 (https://api-xcoders.site)'
-      }
-    };
-    const response = await new Promise((resolve, reject) => {
-      const req = protocol.request(url, requestOptions, (res) => resolve(res));
-      req.on('error', reject);
-      req.end();
-    });
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      return (/video\//gi).test(response.headers['content-type']);
+      const result = response.headers['content-type'];
+      return result.match(type) !== null;
     } else {
       return false;
     }
@@ -168,7 +128,7 @@ async function xcodersIsVideoUrl(url) {
 
 function xcodersGetBuffer(url, options = {}) {
   return new Promise((resolve, reject) => {
-    const protocol = url.startsWith('https') ? https : http;
+    const protocol = url.trim()?.startsWith('https') ? https : http;
     const requestOptions = {
       method: options.method || 'GET',
       headers: {
@@ -177,31 +137,23 @@ function xcodersGetBuffer(url, options = {}) {
         'User-Agent': global.userAgent
       }
     };
-    const request = protocol.request(url, requestOptions, (response) => {
+    const request = protocol.request(url.trim(), requestOptions, (response) => {
       if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
-        const redirectUrl = new URL(response.headers.location, url);
+        const redirectUrl = new URL(response.headers.location, url.trim());
         xcodersGetBuffer(redirectUrl.href, options).then(resolve).catch(reject);
-        request.abort();
+        request.destroy();
         return;
       } else {
         const chunks = [];
         response.on('data', (chunk) => chunks.push(chunk));
         response.on('end', async () => {
           const data = Buffer.concat(chunks);
-          const stream = new Stream.PassThrough();
-          stream.end(data);
-          const bufferStream = stream.read();
-          const type = await fileTypeFromBuffer(bufferStream);
+          const type = await fileTypeFromBuffer(data);
           const ext = !type ? response.headers['content-type'].split('/')[1] : type.ext;
           if (!options.optional) {
-            resolve(bufferStream);
+            resolve(data);
           } else {
-            resolve({
-              mimetype: response.headers['content-type'],
-              size: response.headers['content-length'],
-              ext: ext,
-              result: bufferStream
-            });
+            resolve({ mimetype: response.headers['content-type'], size: response.headers['content-length'], ext: ext, result: data });
           }
         });
       }
@@ -227,13 +179,12 @@ async function xcodersGetJson(url, options = {}) {
         if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
           const redirectUrl = new URL(res.headers.location, url);
           xcodersGetJson(redirectUrl.href, options).then(resolve).catch(reject);
+          req.destroy();
+          return;
         } else {
           const chunks = [];
           res.on('data', (chunk) => chunks.push(chunk));
-          res.on('end', () => {
-            const data = Buffer.concat(chunks).toString();
-            resolve({ status: res.statusCode, message: res.statusMessage, data });
-          });
+          res.on('end', () => resolve({ status: res.statusCode, message: res.statusMessage, data: Buffer.concat(chunks).toString() }));
         }
       });
       req.on('error', reject);
@@ -242,16 +193,21 @@ async function xcodersGetJson(url, options = {}) {
       }
       req.end();
     });
-    const result = response.data;
     try {
-      const jsonData = JSON.parse(result);
+      const jsonData = JSON.parse(response.data);
       return jsonData;
     } catch (error) {
-      return { status: response.status, message: response.message };
+      return {
+        status: false,
+        message: 'error get data'
+      };
     }
   } catch (error) {
     console.error(error);
-    return { status: false, message: error };
+    return {
+      status: false,
+      message: error
+    };
   }
 }
 
@@ -275,6 +231,19 @@ function xcodersFormatDuration(seconds) {
     durationParts.push(remainingSeconds + (remainingSeconds === 1 ? ' second' : ' seconds'));
   }
   return durationParts.length === 0 ? '0 seconds' : durationParts.length === 1 ? durationParts[0] : durationParts.length === 2 ? durationParts.join(', ') : durationParts.join(', ');
+}
+
+function xcodersUtcFormat(duration) {
+  const hours = Math.floor(duration / 3600);
+  const mins = Math.floor((duration % 3600) / 60);
+  const secs = Math.floor(duration % 60);
+  const result = [];
+  if (hours > 0) {
+    result.push(`${hours}`);
+  }
+  result.push(`${mins < 10 ? '0' : ''}${mins}`);
+  result.push(`${secs < 10 ? '0' : ''}${secs}`);
+  return result.join(':');
 }
 
 
@@ -459,6 +428,26 @@ function xcodersConvertGifToMp4(inputFilePath, outputFilePath) {
   });
 }
 
+function xcodersZipFolder(srcFolder, zipFilePath, callback) {
+  const output = fs.createWriteStream(zipFilePath);
+  const archive = archiver('zip', { zlib: { level: 9 } });
+
+  output.on('close', function () {
+    callback();
+  });
+  archive.on('error', function (error) {
+    callback(error);
+  });
+  archive.pipe(output);
+  archive.directory(srcFolder, false);
+  archive.finalize(function (error) {
+    if (error) {
+      callback(error);
+    }
+    callback(null, 'Successfully...');
+  });
+}
+
 function reactEmoji() {
   const emojiList = {
     'love': ['❤', '😍', '😘', '💕', '😻', '💑', '👩‍❤‍👩', '👨‍❤‍👨', '💏', '👩‍❤‍💋‍👩', '👨‍❤‍💋‍👨', '🧡', '💛', '💚', '💙', '💜', '🖤', '💔', '❣', '💞', '💓', '💗', '💖', '💘', '💝', '💟', '♥', '💌', '💋', '👩‍❤️‍💋‍👩', '👨‍❤️‍💋‍👨', '👩‍❤️‍👨', '👩‍❤️‍👩', '👨‍❤️‍👨', '👩‍❤️‍💋‍👨', '👬', '👭', '👫', '🥰', '😚', '😙', '👄', '🌹', '😽', '❣️', '❤️'],
@@ -508,6 +497,7 @@ async function createExif(packname, authorname, pathname) {
   }
 }
 
+library.zipFolder = xcodersZipFolder;
 library.check = checkPackageWebpmux;
 library.convertToMp4 = xcodersConvertGifToMp4;
 library.convertToMp3 = xcodersConvertToMp3;
@@ -515,17 +505,16 @@ library.folderSize = xcodersFolderSize;
 library.createWatermark = xcodersCreateWatermark;
 library.createSticker = xcodersCreateSticker;
 library.formatSize = xcodersFormatSize;
+library.utcFormat = xcodersUtcFormat;
 library.formatDuration = xcodersFormatDuration;
 library.createShortData = xcodersCreateShortData;
 library.downloadContentMediaMessage = xcodersDownloadContentMediaMessage;
 library.getRandom = xcodersGetRandom;
 library.getJson = xcodersGetJson;
 library.getBuffer = xcodersGetBuffer;
-library.isImageUrl = xcodersIsImageUrl;
-library.isAudioUrl = xcodersIsAudioUrl;
-library.isVideoUrl = xcodersIsVideoUrl;
-library.requireJson = xcodersRequireJson;
+library.checkContentType = xcodersCheckContentType;
 library.reloadModule = xcodersReloadModule;
+library.requireJson = xcodersRequireJson;
 library.convertToPDF = xcodersConvertToPDF;
 library.convertToBuffer = xcodersArrayBufferToBuffer;
 library.parseResult = xcodersParseResult;

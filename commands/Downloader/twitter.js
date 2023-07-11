@@ -19,6 +19,7 @@ export default {
       for (let { url } of data.result.data) {
         await xcoders.sendFileFromUrl(m.chat, url, caption, x);
       }
+      return true;
     } catch (error) {
       return errorMessage(m.chat, error, 'Twitter Downloader');
     }

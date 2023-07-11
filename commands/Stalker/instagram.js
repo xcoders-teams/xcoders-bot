@@ -14,7 +14,7 @@ export default {
       const result = parseResult(data.result);
       const caption = styleMessage('Instagram User Stalking', result);
       addHitCommand('Instagram Stalk', true);
-      return xcoders.sendFileFromUrl(m.chat, data.result.profile_url, caption, x, { thumbnail: null });
+      return xcoders.sendFileFromUrl(m.chat, data.result.profile_url, caption, x);
     } catch (error) {
       return errorMessage(m.chat, error, 'Instagram Stalk');
     }

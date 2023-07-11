@@ -19,7 +19,7 @@ export default {
       const result = parseResult({ ...data.result.title, metadata });
       const caption = styleMessage('Ifunny Video Downloader', result);
       addHitCommand('Ifunny', true);
-      return xcoders.sendFileFromUrl(m.chat, metadata.url, caption, x, { thumbnail: null });
+      return xcoders.sendFileFromUrl(m.chat, metadata.url, caption, x);
     } catch (error) {
       return errorMessage(m.chat, error, 'Ifunny');
     }

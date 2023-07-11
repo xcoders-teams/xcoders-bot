@@ -8,7 +8,7 @@ export default {
   usage: '%cmd% url/username story Instagram',
   execute: async ({ xcoders, x, m, query, styleMessage, errorMessage, waitingMessage, apikeys, regex, host, getMessage, getJson, addHitCommand }) => {
     try {
-      const serialize = regex.isUrl(query) ? { query: 'url', path: 'ig-stories' } : { query: 'username', path: 'ig-story' };
+      const serialize = regex.url(query) ? { query: 'url', path: 'ig-stories' } : { query: 'username', path: 'ig-story' };
       const data = await getJson(`${host}/api/download/${serialize.path}?${serialize.query}=${query}&apikey=${apikeys}`);
       if (!data.status || data.result.data.length < 1) return errorMessage(m.chat, getMessage(data), 'Instagram Story');
       await waitingMessage(m.chat);

@@ -13,7 +13,7 @@ export default {
   usage: '%cmd% url api',
   execute: async ({ m, replyMessage, invalidUrlMessage, errorMessage, query, regex }) => {
     try {
-      if (!regex.isUrl(query)) return invalidUrlMessage(m.chat);
+      if (!regex.url(query)) return invalidUrlMessage(m.chat);
       const { data } = await axios.get(query);
       if (typeof data === 'object') {
         const parse = JSON.stringify(data, null, 2);

@@ -1,8 +1,8 @@
 'use strict';
 
 export default {
-  views: ['pinterest < url >'], // view for message in  menu
-  command: /^(pin(|dl|down)|pinterest)$/i, //another command.
+  views: ['pindl < url >'], // view for message in  menu
+  command: /^(pin(|dl|down))$/i, //another command.
   description: 'Download video from Pinterest Url',
   query: true,
   url: true,
@@ -16,7 +16,7 @@ export default {
       const result = parseResult(data.result);
       const caption = styleMessage('Pinterest Video Downloader', result);
       addHitCommand('Pinterest Downloader', true);
-      return xcoders.sendFileFromUrl(m.chat, data.result.url, caption, x, { thumbnail: null });
+      return xcoders.sendFileFromUrl(m.chat, data.result.url, caption, x);
     } catch (error) {
       return errorMessage(m.chat, error, 'Pinterest Downloader');
     }

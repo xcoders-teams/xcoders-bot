@@ -299,7 +299,6 @@ class HttpDownloader {
                 } else {
                     this.flows = 1;
                 }
-                // Tambahkan pengecekan jika tidak ada aliran yang aktif
                 if (this.flows === 0 && this.writingCount === 0 && this.isDone) {
                     if (this.isDownloading && !this.isCanceled) {
                         this.events.emit('done', { mime: this.contentType, size: this.contentLength });

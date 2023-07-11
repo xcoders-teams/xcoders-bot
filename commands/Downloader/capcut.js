@@ -16,7 +16,7 @@ export default {
       const result = parseResult(data.result);
       const caption = styleMessage('Capcut Video Downloader', result);
       addHitCommand('Capcut', true);
-      return xcoders.sendFileFromUrl(m.chat, data.result.url, caption, x, { thumbnail: null });
+      return xcoders.sendFileFromUrl(m.chat, data.result.url, caption, x);
     } catch (error) {
       return errorMessage(m.chat, error, 'Capcut');
     }

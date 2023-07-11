@@ -6,7 +6,8 @@ export default {
     description: 'Delete a message',
     usage: '%cmd% reply Messages',
     execute: async ({ replyMessage, m, errorMessage, response }) => {
-        if (!m.quoted) return errorMessage(m.chat, 'Reply message for delete message');
+        if (!m.quoted) return replyMessage('Reply message for delete message', 'info');
+        if (!m.quoted.fromMe) return replyMessage('Reply pesan yang dikirimkan bot ini...', 'info');
         return m.quoted.delete().then(() => replyMessage(response.success)).catch((error) => errorMessage(m.chat, error));
     }
 }

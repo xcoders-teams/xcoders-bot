@@ -1,14 +1,11 @@
 import fs from 'fs';
 import path from 'path';
 import chalk from 'chalk';
-import axios from 'axios';
-import Baileys from '@whiskeysockets/baileys';
-import cheerio from 'cheerio';
 import { platform } from 'process';
 import { fileURLToPath } from 'url';
 
 global.restApi = ['https://api-xcoders.site', 'https://api-fxc7.cloud.okteto.net'];
-global.ownerNumber = ['6285956396417@s.whatsapp.net'];
+global.ownerNumber = ['6285956396417@s.whatsapp.net', '6285855030554@s.whatsapp.net'];
 global.absoluteUrl = (pathFiles) => {
   if (platform !== 'android') {
     const updateFile = fileURLToPath(import.meta.url).toString();
@@ -17,9 +14,9 @@ global.absoluteUrl = (pathFiles) => {
     return fileURLToPath(pathFiles);
   }
 };
-global.Baileys = Baileys;
-global.axios = axios;
-global.cheerio = cheerio;
+global.Baileys = (await import('@whiskeysockets/baileys')).default;
+global.axios = (await import('axios')).default;
+global.cheerio = (await import('cheerio')).default;
 global.PORT = process.env.PORT || 8000;
 global.prefix = '!';
 global.apikeys = 'YOUR APIKEYS';

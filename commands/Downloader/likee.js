@@ -16,7 +16,7 @@ export default {
       const result = parseResult(data.result);
       const caption = styleMessage('Likee Video Downloader', result);
       addHitCommand('Likee', true);
-      return xcoders.sendFileFromUrl(m.chat, data.result.nowatermark, caption, x, { thumbnail: null });
+      return xcoders.sendFileFromUrl(m.chat, data.result.nowatermark, caption, x);
     } catch (error) {
       return errorMessage(m.chat, error, 'Likee');
     }

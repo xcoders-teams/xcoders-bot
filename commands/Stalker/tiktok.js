@@ -16,7 +16,7 @@ export default {
       const result = parseResult(data.result);
       const caption = styleMessage('Tiktok User Stalking', result);
       addHitCommand('Tiktok Stalk', true);
-      return xcoders.sendFileFromUrl(m.chat, data.result.url, caption, x, { thumbnail: null });
+      return xcoders.sendFileFromUrl(m.chat, data.result.url, caption, x);
     } catch (error) {
       return errorMessage(m.chat, error, 'Tiktok Stalk');
     }

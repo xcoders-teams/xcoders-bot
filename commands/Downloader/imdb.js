@@ -16,7 +16,7 @@ export default {
             const result = parseResult(data.result);
             const caption = styleMessage('IMDB Video Downloader', result);
             addHitCommand('IMDB Downloader', true);
-            return xcoders.sendFileFromUrl(m.chat, data.result.data[0].url, caption, x, { thumbnail: null });
+            return xcoders.sendFileFromUrl(m.chat, data.result.data[0].url, caption, x);
         } catch (error) {
             return errorMessage(m.chat, error, 'IMDB Downloader');
         }

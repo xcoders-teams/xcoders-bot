@@ -1,7 +1,5 @@
 'use strict';
 
-import _ from 'lodash';
-
 export default {
   views: ['sendvideo < url >'], // view for message in  menu
   command: /^send(video|vidio)$/i, //another command.
@@ -12,7 +10,6 @@ export default {
   usage: '%cmd% url valid video',
   execute: async ({ xcoders, waitingMessage, errorMessage, m, x, response, query, isVideoUrl }) => {
     try {
-      if (!await isVideoUrl(query)) throw _.sample(response.error.url);
       await waitingMessage(m.chat);
       return xcoders.sendFileFromUrl(m.chat, query, response.success, x);
     } catch (error) {
